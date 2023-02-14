@@ -63,3 +63,9 @@ with torch.no_grad():
             print(f"{frame_count / (now-last_logged)} fps")
             last_logged = now
             frame_count = 0
+
+        # print results
+        top = list(enumerate(output[0].softmax(dim=0)))
+        top.sort(key=lambda x: x[1], reverse=True)
+        for idx, val in top[:10]:
+            print(f"{val.item()*100:.2f}% {classes[idx]}")
