@@ -57,6 +57,11 @@ DXL_MOVING_STATUS_THRESHOLD = 20    # Dynamixel moving status threshold
 # Goal Positions
 GOAL_POSITIONS = {1: [180, 270], 2: [0, 180]}
 
+# Normalize goal positions using the minimum and maximum position values.
+normalize = lambda degrees: int((degrees / 360) * (DXL_MAXIMUM_POSITION_VALUE - DXL_MINIMUM_POSITION_VALUE) + DXL_MINIMUM_POSITION_VALUE)
+for DXL_ID in DXL_IDS:
+    GOAL_POSITIONS[DXL_ID] = [normalize(degrees) for degrees in GOAL_POSITIONS[DXL_ID]]
+
 # Initialize PortHandler instance
 # Set the port path
 # Get methods and members of PortHandlerLinux or PortHandlerWindows
@@ -140,8 +145,6 @@ for DXL_ID in DXL_IDS:
             index = 1
         else:
             index = 0
-
-
 
     # Disable Dynamixel Torque
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, DXL_ID, ADDR_TORQUE_ENABLE, TORQUE_DISABLE)
