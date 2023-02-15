@@ -146,6 +146,9 @@ for DXL_ID in DXL_IDS:
         else:
             index = 0
 
+# Get Dynamixel model number
+for DXL_ID in DXL_IDS:
+
     # Disable Dynamixel Torque
     dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(portHandler, DXL_ID, ADDR_TORQUE_ENABLE, TORQUE_DISABLE)
     if dxl_comm_result != COMM_SUCCESS:
