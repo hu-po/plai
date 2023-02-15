@@ -54,6 +54,9 @@ TORQUE_ENABLE               = 1     # Value for enabling the torque
 TORQUE_DISABLE              = 0     # Value for disabling the torque
 DXL_MOVING_STATUS_THRESHOLD = 20    # Dynamixel moving status threshold
 
+# Goal Positions
+GOAL_POSITIONS = {1: [180, 270], 2: [0, 180]}
+
 # Initialize PortHandler instance
 # Set the port path
 # Get methods and members of PortHandlerLinux or PortHandlerWindows
@@ -105,12 +108,14 @@ for DXL_ID in DXL_IDS:
     else:
         print("Dynamixel has been successfully connected")
 
+    index = 0
     while 1:
         print("Press any key to continue! (or press ESC to quit!)")
         if getch() == chr(0x1b):
             break
 
         # Write goal position
+        dxl_goal_position = GOAL_POSITIONS[DXL_ID]
         dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(portHandler, DXL_ID, ADDR_GOAL_POSITION, dxl_goal_position[index])
         if dxl_comm_result != COMM_SUCCESS:
             print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
