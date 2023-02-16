@@ -208,8 +208,8 @@ def servos(
             servo.disable_torque()
 
 if __name__ == "__main__":
-    with servos() as servos:
-        for servo in servos:
+    with servos() as servo:
+        for servo in servo:
             servo.move(0)
             time.sleep(2)
             servo.move(1)
