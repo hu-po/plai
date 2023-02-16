@@ -121,9 +121,10 @@ if __name__ == '__main__':
             if is_cat(output):
                 servo[0].move(1)
                 servo[1].move(1)
-                time.sleep(1)
-                servo[0].move(0)
-                servo[1].move(0)
+                servo[0].move(0.2)
+                servo[1].move(0.2)
+                servo[0].move(1)
+                servo[1].move(1)
                 continue
 
             # Calculate FPS
