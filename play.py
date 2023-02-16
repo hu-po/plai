@@ -59,6 +59,8 @@ def servos(
     # servo 002 - 57600bps MX106 protocol2.0 range 0 to 180
     s2_min=0,
     s2_max=180,
+    # Timeout duration for servo moving to position
+    move_timeout = 2,
     # DYNAMIXEL Protocol Version (1.0 / 2.0)
     # https://emanual.robotis.com/docs/en/dxl/protocol2/
     PROTOCOL_VERSION=2.0,
@@ -160,7 +162,9 @@ def servos(
         elif dxl_error != 0:
             print("%s" % packetHandler.getRxPacketError(dxl_error))
 
-        while 1:
+        # Move to goal position with timeout
+        timeout_start = time.time()
+        while time.time() < timeout_start + move_timeout:
     
             # Read present position
             dxl_present_position, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(
