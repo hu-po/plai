@@ -64,6 +64,35 @@ def model(*args, **kwds):
         pass
 
 
+def is_cat(output):
+    """ Check if the model thinks it is a cat. """
+    top = list(enumerate(output[0].softmax(dim=0)))
+    top.sort(key=lambda x: x[1], reverse=True)
+    CATS = {
+        281: 'tabby, tabby cat',
+        282: 'tiger cat',
+        283: 'Persian cat',
+        284: 'Siamese cat, Siamese',
+        285: 'Egyptian cat',
+        286: 'cougar, puma, catamount, mountain lion, painter, panther, Felis concolor',
+        287: 'lynx, catamount',
+        288: 'leopard, Panthera pardus',
+        289: 'snow leopard, ounce, Panthera uncia',
+        290: 'jaguar, panther, Panthera onca, Felis onca',
+        291: 'lion, king of beasts, Panthera leo',
+        292: 'tiger, Panthera tigris',
+        293: 'cheetah, chetah, Acinonyx jubatus',
+    }
+    cat_ids = set(CATS.keys())
+    if top[0][0] in cat_ids:
+        log.info(
+            f"\n\n {top[0][1]*100.0:.2f} cat detected {CATS[top[0][0]]} \n\n")
+        return True
+    else:
+        log.info(f"Not a cat: {top[0][1]} {classes[top[0][0]]}")
+        return False
+
+
 if __name__ == '__main__':
 
     log.setLevel(logging.DEBUG)
@@ -74,14 +103,10 @@ if __name__ == '__main__':
     last_logged = time.time()
     frame_count = 0
 
-    # Servo FPS
-
-
     with camera() as get_frame, servos() as servo, model() as (net, preprocess):
         while True:
 
             # Set servos to starting position
-            import pdb; pdb.set_trace()
             servo[0].move(0)
             servo[1].move(0)
 
@@ -93,18 +118,13 @@ if __name__ == '__main__':
             with torch.no_grad():
                 output = net(input_tensor)
 
-            # print results
-            top = list(enumerate(output[0].softmax(dim=0)))
-            top.sort(key=lambda x: x[1], reverse=True)
-            for idx, val in top[:3]:
-                print(f"{val.item()*100:.2f}% {classes[idx]}")
-
-            # TODO: Confidence as LED?
-
-            # Goal position is confidence for class
-            servo[0].move(top[0][1])
-            # Goal position is index of class
-            servo[1].move(top[0][0] / len(classes))
+            if is_cat(output):
+                servo[0].move(1)
+                servo[1].move(1)
+                time.sleep(1)
+                servo[0].move(0)
+                servo[1].move(0)
+                continue
 
             # Calculate FPS
             frame_count += 1
