@@ -54,13 +54,13 @@ def camera(
 @contextmanager
 def servos(
     # servo 001 - 57600bps MX106 protocol2.0 range 180 to 270
-    s1_min=110,
+    s1_min=120,
     s1_max=180,
     # servo 002 - 57600bps MX106 protocol2.0 range 0 to 180
     s2_min=0,
-    s2_max=180,
+    s2_max=100,
     # Timeout duration for servo moving to position
-    move_timeout = 2,
+    move_timeout = 5,
     # DYNAMIXEL Protocol Version (1.0 / 2.0)
     # https://emanual.robotis.com/docs/en/dxl/protocol2/
     PROTOCOL_VERSION=2.0,
@@ -81,7 +81,7 @@ def servos(
     DXL_MAXIMUM_POSITION_VALUE=4095,
     TORQUE_ENABLE=1,     # Value for enabling the torque
     TORQUE_DISABLE=0,     # Value for disabling the torque
-    DXL_MOVING_STATUS_THRESHOLD=20,    # Dynamixel moving status threshold
+    DXL_MOVING_STATUS_THRESHOLD=10,    # Dynamixel moving status threshold
 ):
     log.info("Starting Servo communication")
     fd = sys.stdin.fileno()
