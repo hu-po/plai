@@ -54,8 +54,8 @@ def camera(
 @contextmanager
 def servos(
     # servo 001 - 57600bps MX106 protocol2.0 range 180 to 270
-    s1_min=180,
-    s1_max=270,
+    s1_min=110,
+    s1_max=180,
     # servo 002 - 57600bps MX106 protocol2.0 range 0 to 180
     s2_min=0,
     s2_max=180,
@@ -135,6 +135,8 @@ def servos(
         quit()
 
     def set_pos(dxl_id, dxl_goal_position):
+
+        log.info("Moving servo %s to %s" % (dxl_id, dxl_goal_position))
         
         # Enable Dynamixel Torque
         dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(
@@ -250,10 +252,11 @@ if __name__ == '__main__':
             # TODO: Confidence as LED?
 
             num_classes = len(classes)
-            # Goal position is index of class
-            set_pos(1, top[0][0] / num_classes)
             # Goal position is confidence for class
-            set_pos(2, val.item())
+            set_pos(1, top[0][1])
+            # Goal position is index of class
+            set_pos(2, top[0][0] / num_classes)
+
 
             # Calculate FPS
             frame_count += 1
