@@ -182,7 +182,7 @@ class Servo:
 
 
 @contextmanager
-def servos(
+def servo_ctx(
     servo_dict: Dict[int, Tuple[int, int]] = {
         # servo 001 - 57600bps MX106 protocol2.0
         1: (100, 150),
@@ -208,7 +208,7 @@ def servos(
             servo.disable_torque()
 
 if __name__ == "__main__":
-    with servos() as servo:
+    with servo_ctx() as servo:
         for servo in servo:
             servo.move(0)
             time.sleep(2)

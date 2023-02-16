@@ -4,45 +4,14 @@ import logging
 import time
 from contextlib import contextmanager
 
-import cv2
-import numpy as np
 import torch
 from torchvision import models, transforms
 
 from imagenet_labels import classes
-from servo import servos
-
+from servo import servo_ctx
+from camera import camera_ctx
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-
-@contextmanager
-def camera(
-    width: int = 224,
-    height: int = 224,
-    fps: int = 36,
-):
-    log.info("Starting video capture")
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    cap.set(cv2.CAP_PROP_FPS, fps)
-
-    def get_frame() -> np.ndarray:
-        ret, image = cap.read()
-        if not ret:
-            log.error("Failed to capture frame")
-            return None
-        # convert opencv output from BGR to RGB
-        image = image[:, :, [2, 1, 0]]
-        return image
-
-    try:
-        yield get_frame
-    finally:
-        log.info("Ended video capture")
-        del cap
-
 
 @contextmanager
 def model(*args, **kwds):
@@ -103,34 +72,37 @@ if __name__ == '__main__':
     last_logged = time.time()
     frame_count = 0
 
-    with camera() as get_frame, servos() as servo, model() as (net, preprocess):
-        while True:
+    with camera_ctx() as np_image:
+        with servo_ctx() as servo:
+            with model() as (net, preprocess):
+                while True:
 
-            # Set servos to starting position
-            servo[0].move(0)
-            servo[1].move(0)
+                    # Set servos to starting position
+                    servo[0].move(0)
+                    servo[1].move(0)
 
-            # Get image and preprocess
-            image = get_frame()
+                    # Get image and preprocess
+                    image = np_image()
 
-            # Create a mini-batch as expected by the model
-            input_tensor = preprocess(image).unsqueeze(0)
-            with torch.no_grad():
-                output = net(input_tensor)
+                    # Create a mini-batch as expected by the model
+                    with torch.no_grad():
+                        input_tensor = preprocess(image).unsqueeze(0)
+                        output = net(input_tensor)
 
-            if is_cat(output):
-                servo[0].move(1)
-                servo[1].move(1)
-                servo[0].move(0.2)
-                servo[1].move(0.2)
-                servo[0].move(1)
-                servo[1].move(1)
-                continue
+                    if is_cat(output):
+                        # The Wiggle
+                        servo[0].move(0.1)
+                        servo[1].move(0.1)
+                        servo[0].move(0.05)
+                        servo[1].move(0.05)
+                        servo[0].move(0.1)
+                        servo[1].move(0.1)
+                        continue
 
-            # Calculate FPS
-            frame_count += 1
-            now = time.time()
-            if now - last_logged > 1:
-                print(f"{frame_count / (now-last_logged)} fps")
-                last_logged = now
-                frame_count = 0
+                    # Calculate FPS
+                    frame_count += 1
+                    now = time.time()
+                    if now - last_logged > 1:
+                        print(f"{frame_count / (now-last_logged)} fps")
+                        last_logged = now
+                        frame_count = 0
