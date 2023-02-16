@@ -185,7 +185,7 @@ class Servo:
 def servos(
     servo_dict: Dict[int, Tuple[int, int]] = {
         # servo 001 - 57600bps MX106 protocol2.0
-        1: (120, 180),
+        1: (100, 150),
         # servo 002 - 57600bps MX106 protocol2.0
         2: (0, 100),
     },
