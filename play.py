@@ -133,6 +133,7 @@ def servos(
         quit()
 
     def set_pos(dxl_id, dxl_goal_position):
+        
         # Enable Dynamixel Torque
         dxl_comm_result, dxl_error = packetHandler.write1ByteTxRx(
             portHandler, dxl_id, ADDR_TORQUE_ENABLE, TORQUE_ENABLE)
@@ -151,33 +152,29 @@ def servos(
         else:
             raise ValueError("Invalid servo id")
 
-        while 1:
-            print("Press any key to continue! (or press ESC to quit!)")
-            if getch() == chr(0x1b):
-                break
+        # Write goal position
+        dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(
+            portHandler, dxl_id, ADDR_GOAL_POSITION, dxl_goal_position)
+        if dxl_comm_result != COMM_SUCCESS:
+            print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+        elif dxl_error != 0:
+            print("%s" % packetHandler.getRxPacketError(dxl_error))
 
-            # Write goal position
-            dxl_comm_result, dxl_error = packetHandler.write4ByteTxRx(
-                portHandler, dxl_id, ADDR_GOAL_POSITION, dxl_goal_position)
+        while 1:
+    
+            # Read present position
+            dxl_present_position, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(
+                portHandler, dxl_id, ADDR_PRESENT_POSITION)
             if dxl_comm_result != COMM_SUCCESS:
                 print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
             elif dxl_error != 0:
                 print("%s" % packetHandler.getRxPacketError(dxl_error))
 
-            while 1:
-                # Read present position
-                dxl_present_position, dxl_comm_result, dxl_error = packetHandler.read4ByteTxRx(
-                    portHandler, dxl_id, ADDR_PRESENT_POSITION)
-                if dxl_comm_result != COMM_SUCCESS:
-                    print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
-                elif dxl_error != 0:
-                    print("%s" % packetHandler.getRxPacketError(dxl_error))
+            print("[ID:%03d] GoalPos:%03d  PresPos:%03d" %
+                    (dxl_id, dxl_goal_position, dxl_present_position))
 
-                print("[ID:%03d] GoalPos:%03d  PresPos:%03d" %
-                      (dxl_id, dxl_goal_position, dxl_present_position))
-
-                if not abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD:
-                    break
+            if not abs(dxl_goal_position - dxl_present_position) > DXL_MOVING_STATUS_THRESHOLD:
+                break
 
     try:
         yield set_pos
