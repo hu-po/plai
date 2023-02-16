@@ -81,6 +81,7 @@ if __name__ == '__main__':
         while True:
 
             # Set servos to starting position
+            import pdb; pdb.set_trace()
             servo[0].move(0)
             servo[1].move(0)
 

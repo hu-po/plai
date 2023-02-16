@@ -184,9 +184,9 @@ class Servo:
 @contextmanager
 def servos(
     servo_dict: Dict[int, Tuple[int, int]] = {
-        # servo 001 - 57600bps MX106 protocol2.0 range 180 to 270
+        # servo 001 - 57600bps MX106 protocol2.0
         1: (120, 180),
-        # servo 002 - 57600bps MX106 protocol2.0 range 0 to 180
+        # servo 002 - 57600bps MX106 protocol2.0
         2: (0, 100),
     },
 ):
