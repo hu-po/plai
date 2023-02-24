@@ -14,7 +14,7 @@ import gradio as gr
 from play import model, is_cat_imagenet
 
 
-def run(servo_1, servo_2, image):
+def run(image):
     with model() as predict:
         output = predict(image)
         cat_bool, raw = is_cat_imagenet(output)
