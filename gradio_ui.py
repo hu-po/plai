@@ -1,10 +1,44 @@
+"""
+
+If the Gradio app is running on port 7860 on a computer with IP address 192.168.1.100, and you want to access it from a computer with IP address 192.168.1.200 using port 7861, you could use the following command:
+
+ssh -L 7861:localhost:7860 user@192.168.1.100
+
+On the local computer go to the URL
+
+http://localhost:7861
+
+"""
+
 import gradio as gr
+# from servo import servo_ctx
+from camera import camera_ctx, IMAGE_WIDTH, IMAGE_HEIGHT, FPS
+from play import model, is_cat
 
 
-demo = gr.Interface(
-    fn=lambda x: x,
-    inputs='text',
-    outputs='text',
+def run(servo_1, servo_2, image):
+
+    with model() as predict:
+        output = predict(image)
+        if is_cat(output):
+            print("Cat detected")
+    return image
+
+
+# Create interface
+interface = gr.Interface(
+    run,
+    [
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 1"),
+        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 2"),
+        gr.Image(source="webcam", label="Camera Image")
+    ],
+    [
+        gr.Image(type="numpy", label="Processed Image"),
+    ],
+    title="Plai",
+    description="Control the servos",
 )
 
-demo.launch()
+if __name__ == "__main__":
+    interface.launch()

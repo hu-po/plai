@@ -17,12 +17,16 @@ import numpy as np
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+IMAGE_WIDTH = 224
+IMAGE_HEIGHT = 224
+FPS = 36
+
 
 @contextmanager
 def camera_ctx(
-    width: int = 224,
-    height: int = 224,
-    fps: int = 36,
+    width: int = IMAGE_WIDTH,
+    height: int = IMAGE_HEIGHT,
+    fps: int = FPS,
 ):
     log.info("Starting video capture")
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)

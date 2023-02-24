@@ -13,6 +13,7 @@ from camera import camera_ctx
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
+
 @contextmanager
 def model(*args, **kwds):
     log.info("Starting AI model")
@@ -26,8 +27,15 @@ def model(*args, **kwds):
     net = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
     # jit model to take it from ~20fps to ~30fps
     net = torch.jit.script(net)
+
+    def inference(x):
+        with torch.no_grad():
+            # Create a mini-batch as expected by the model
+            x = preprocess(image).unsqueeze(0)
+            x = net(x)
+            return x
     try:
-        yield net, preprocess
+        yield inference
     finally:
         log.info("Ended AI model")
         pass
@@ -74,7 +82,7 @@ if __name__ == '__main__':
 
     with camera_ctx() as np_image:
         with servo_ctx() as servo:
-            with model() as (net, preprocess):
+            with model() as predict:
                 while True:
 
                     # Set servos to starting position
@@ -85,9 +93,7 @@ if __name__ == '__main__':
                     image = np_image()
 
                     # Create a mini-batch as expected by the model
-                    with torch.no_grad():
-                        input_tensor = preprocess(image).unsqueeze(0)
-                        output = net(input_tensor)
+                    output = predict(image)
 
                     if is_cat(output):
                         # The Wiggle
