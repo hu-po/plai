@@ -50,7 +50,7 @@ def model(*args, **kwds):
         with torch.no_grad():
             # Create a mini-batch as expected by the model
             x = preprocess(x).unsqueeze(0)
-            x = net(x)
+            x = net(x)[0]
             return x
     try:
         yield inference
@@ -59,20 +59,19 @@ def model(*args, **kwds):
         pass
 
 
-def is_cat_imagenet(output, threshold=0.5):
+def is_cat_imagenet(logits, threshold=2.0):
     """ Check if the model thinks it is a cat. """
     is_cat: bool = False
-    cat_ids = set(IMAGENET_CATS.keys())
-    top = list(enumerate(output[0].softmax(dim=0)))
-    # Get confidence score on cat classes
+    cat_ids = set(IMAGENET_CATS.keys())    
     for cat_id in cat_ids:
-        print(f"{top[cat_id][1]} {cat_id}")
-        if top[cat_id][1] > threshold:
+        print(f"{logits[cat_id]} {IMAGENET_CATS[cat_id]}")
+        if logits[cat_id] > threshold:
             is_cat = True
-            break
     # Get the top predictions
-    top.sort(key=lambda x: x[1], reverse=True)
-    top = [(classes[x[0]], f"{x[1]:.2f}") for x in top[:20]]
+    scores = logits.softmax(dim=0)
+    scores = [(i, scores[i]) for i in range(len(scores))]
+    scores.sort(key=lambda x: x[1], reverse=True)
+    top = [(classes[x[0]], f"{x[1]*100:.2f}") for x in scores[:20]]
     return is_cat, top
 
 

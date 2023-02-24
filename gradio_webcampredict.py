@@ -11,8 +11,6 @@ http://localhost:7861
 """
 
 import gradio as gr
-# from servo import servo_ctx
-from camera import camera_ctx, IMAGE_WIDTH, IMAGE_HEIGHT, FPS
 from play import model, is_cat_imagenet
 
 
@@ -30,8 +28,6 @@ def run(servo_1, servo_2, image):
 interface = gr.Interface(
     run,
     [
-        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 1"),
-        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 2"),
         gr.Image(source="webcam", label="Camera Image")
     ],
     [
