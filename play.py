@@ -63,9 +63,11 @@ def is_cat_imagenet(output):
     cat_ids = set(CATS.keys())
     top_ids = set([x[0] for x in top[:10]])
     intersect = cat_ids.intersection(top_ids)
+    # get class names for top 5
+    top = [(classes[x[0]], x[1]) for x in top[:5]]
     if len(intersect) > 2:  # More than 2 cats in top 10
-        return True, top[:5]
-    return False, top[:5]
+        return True, top
+    return False, top
 
 
 # if __name__ == '__main__':
