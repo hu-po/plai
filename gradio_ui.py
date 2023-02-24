@@ -22,7 +22,7 @@ def run(servo_1, servo_2, image):
         cat_bool, raw = is_cat_imagenet(output)
         msg = f"is cat: {cat_bool}\n"
         for name, score in raw:
-            msg += f"{name} {score:.2f}\n"
+            msg += f"{name} {score}\n"
     return image, msg
 
 

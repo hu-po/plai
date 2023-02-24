@@ -61,10 +61,10 @@ def is_cat_imagenet(output):
         293: 'cheetah, chetah, Acinonyx jubatus',
     }
     cat_ids = set(CATS.keys())
-    top_ids = set([x[0] for x in top[:80]])
+    top_ids = set([x[0] for x in top[:20]])
     intersect = cat_ids.intersection(top_ids)
     # get class names for top 5
-    top = [(classes[x[0]], f"{x[1]:.2f}") for x in top[:5]]
+    top = [(classes[x[0]], f"{x[1]:.2f}") for x in top[:20]]
     if len(intersect) > 1:  # More than 2 cats in top 10
         return True, top
     return False, top
