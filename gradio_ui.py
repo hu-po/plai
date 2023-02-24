@@ -13,16 +13,14 @@ http://localhost:7861
 import gradio as gr
 # from servo import servo_ctx
 from camera import camera_ctx, IMAGE_WIDTH, IMAGE_HEIGHT, FPS
-from play import model, is_cat
+from play import model, is_cat_imagenet
 
 
 def run(servo_1, servo_2, image):
-
     with model() as predict:
         output = predict(image)
-        if is_cat(output):
-            print("Cat detected")
-    return image
+        cat, msg = is_cat_imagenet(output)
+    return image, msg
 
 
 # Create interface
@@ -35,6 +33,7 @@ interface = gr.Interface(
     ],
     [
         gr.Image(type="numpy", label="Processed Image"),
+        gr.Textbox(lines=2, label="Output")
     ],
     title="Plai",
     description="Control the servos",

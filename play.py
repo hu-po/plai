@@ -8,8 +8,8 @@ import torch
 from torchvision import models, transforms
 
 from imagenet_labels import classes
-from servo import servo_ctx
-from camera import camera_ctx
+# from servo import servo_ctx
+# from camera import camera_ctx
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def model(*args, **kwds):
     def inference(x):
         with torch.no_grad():
             # Create a mini-batch as expected by the model
-            x = preprocess(image).unsqueeze(0)
+            x = preprocess(x).unsqueeze(0)
             x = net(x)
             return x
     try:
@@ -41,7 +41,7 @@ def model(*args, **kwds):
         pass
 
 
-def is_cat(output):
+def is_cat_imagenet(output):
     """ Check if the model thinks it is a cat. """
     top = list(enumerate(output[0].softmax(dim=0)))
     top.sort(key=lambda x: x[1], reverse=True)
@@ -62,53 +62,54 @@ def is_cat(output):
     }
     cat_ids = set(CATS.keys())
     if top[0][0] in cat_ids:
-        log.info(
-            f"\n\n {top[0][1]*100.0:.2f} cat detected {CATS[top[0][0]]} \n\n")
-        return True
+        _msg = f"\n\n {top[0][1]*100.0:.2f} cat detected {CATS[top[0][0]]} \n\n"
+        log.info(_msg)
+        return True, _msg
     else:
-        log.info(f"Not a cat: {top[0][1]} {classes[top[0][0]]}")
-        return False
+        _msg = f"Not a cat: {top[0][1]} {classes[top[0][0]]}"
+        log.info(_msg)
+        return False, _msg
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    log.setLevel(logging.DEBUG)
+#     log.setLevel(logging.DEBUG)
 
-    # Calculate FPS
-    # TODO: FPS for each component, profile
-    started = time.time()
-    last_logged = time.time()
-    frame_count = 0
+#     # Calculate FPS
+#     # TODO: FPS for each component, profile
+#     started = time.time()
+#     last_logged = time.time()
+#     frame_count = 0
 
-    with camera_ctx() as np_image:
-        with servo_ctx() as servo:
-            with model() as predict:
-                while True:
+#     with camera_ctx() as np_image:
+#         with servo_ctx() as servo:
+#             with model() as predict:
+#                 while True:
 
-                    # Set servos to starting position
-                    servo[0].move(0)
-                    servo[1].move(0)
+#                     # Set servos to starting position
+#                     servo[0].move(0)
+#                     servo[1].move(0)
 
-                    # Get image and preprocess
-                    image = np_image()
+#                     # Get image and preprocess
+#                     image = np_image()
 
-                    # Create a mini-batch as expected by the model
-                    output = predict(image)
+#                     # Create a mini-batch as expected by the model
+#                     output = predict(image)
 
-                    if is_cat(output):
-                        # The Wiggle
-                        servo[0].move(0.1)
-                        servo[1].move(0.1)
-                        servo[0].move(0.05)
-                        servo[1].move(0.05)
-                        servo[0].move(0.1)
-                        servo[1].move(0.1)
-                        continue
+#                     if is_cat(output):
+#                         # The Wiggle
+#                         servo[0].move(0.1)
+#                         servo[1].move(0.1)
+#                         servo[0].move(0.05)
+#                         servo[1].move(0.05)
+#                         servo[0].move(0.1)
+#                         servo[1].move(0.1)
+#                         continue
 
-                    # Calculate FPS
-                    frame_count += 1
-                    now = time.time()
-                    if now - last_logged > 1:
-                        print(f"{frame_count / (now-last_logged)} fps")
-                        last_logged = now
-                        frame_count = 0
+#                     # Calculate FPS
+#                     frame_count += 1
+#                     now = time.time()
+#                     if now - last_logged > 1:
+#                         print(f"{frame_count / (now-last_logged)} fps")
+#                         last_logged = now
+#                         frame_count = 0
