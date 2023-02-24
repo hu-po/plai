@@ -18,9 +18,10 @@ from play import model, is_cat_imagenet
 
 def run(servo_1, servo_2):
     with servo_ctx() as servo:
-        with camera_ctx() as np_image:
+        with camera_ctx() as get_image:
             with model() as predict:
-                output = predict(np_image())
+                image = get_image()
+                output = predict(image)
                 cat_bool, raw = is_cat_imagenet(output)
                 msg = f"is cat: {cat_bool}\n"
                 for name, score in raw:
