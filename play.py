@@ -66,6 +66,7 @@ def is_cat_imagenet(output, threshold=0.5):
     top = list(enumerate(output[0].softmax(dim=0)))
     # Get confidence score on cat classes
     for cat_id in cat_ids:
+        print(f"{top[cat_id][1]} {cat_id}")
         if top[cat_id][1] > threshold:
             is_cat = True
             break
