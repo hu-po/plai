@@ -10,12 +10,15 @@ http://localhost:7861
 
 """
 
+import time
 import gradio as gr
 from servo import Servo
 from typing import List
 
 
-def run(servo_1, servo_2):
+from play import model, is_cat_imagenet
+
+def run(image):
     servos: List[Servo] = [
         Servo(
             id=1,
@@ -32,23 +35,35 @@ def run(servo_1, servo_2):
     for servo in servos[1:]:
         servo.portHandler = servos[0].portHandler
         servo.packetHandler = servos[0].packetHandler
-    # Move the servos to a position
-    servos[0].move(servo_1)
-    servos[1].move(servo_2)
-    # Read the current position
-    pos_1 = servos[0].get_position()
-    pos_2 = servos[1].get_position()
-    return f"Servo 1: {pos_1}\nServo 2: {pos_2}"
+
+    # Enable cat detection model
+    with model() as predict:
+        output = predict(image)
+        cat_bool, raw = is_cat_imagenet(output)
+        msg = f"is cat: {cat_bool}\n"
+        for name, score in raw:
+            msg += f"{name} {score}\n"
+    if cat_bool:
+        # Wiggle the servos
+        for keyframe in [0.0, 1.0, 0.0]:
+            servos[0].move(keyframe)
+            servos[1].move(keyframe)
+            pos_1 = servos[0].get_position()
+            pos_2 = servos[1].get_position()
+            time.sleep(0.2)
+            msg += f"Servo 1: {pos_1}\nServo 2: {pos_2}"
+        
+    return image, f"Servo 1: {pos_1}\nServo 2: {pos_2}"
 
 
 # Create interface
 interface = gr.Interface(
     run,
     [
-        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 1"),
-        gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 2"),
+        gr.Image(source="webcam", label="Camera Image")
     ],
     [
+        gr.Image(type="numpy", label="Processed Image"),
         gr.Textbox(lines=2, label="Output")
     ],
     title="Plai",
