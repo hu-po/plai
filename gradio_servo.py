@@ -18,14 +18,14 @@ from typing import List
 def run(servo_1, servo_2):
     servos: List[Servo] = [
         Servo(
-            servo_id=0,
-            min_degrees=0,
-            max_degrees=180,
+            id=1,
+            min_degrees=100,
+            max_degrees=150,
         ),
         Servo(
-            servo_id=0,
+            id=2,
             min_degrees=0,
-            max_degrees=180,
+            max_degrees=100,
         ),
     ]
     # Connect the first servo
