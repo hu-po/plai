@@ -64,10 +64,7 @@ class Servo:
         self.torque_enable = torque_enable
         self.torque_disable = torque_disable
         self.dxl_moving_status_threshold = dxl_moving_status_threshold
-
         self.torque_enabled = False
-
-    def connect(self):
 
         log.info("Starting Servo communication")
         fd = sys.stdin.fileno()
@@ -135,6 +132,9 @@ class Servo:
             log.info(f"Servo {self.id} torque disabled")
         self.torque_enabled = False
 
+    def __del__(self):
+        self.disable_torque()
+
     def norm_degrees(self, x):
         """ Normalize servo from [0, 1] to [min_degrees, max_degrees]. """
         return (x * (self.max_degrees - self.min_degrees)) + self.min_degrees
@@ -142,6 +142,16 @@ class Servo:
     def norm_position(self, x):
         """ Normalize servo from [min_degrees, max_degrees] to [min_pos, max_pos]. """
         return int(((x / 360.0) * (self.dxl_maximum_position_value - self.dxl_minimum_position_value)) + self.dxl_minimum_position_value)
+    
+    def get_position(self):
+        """ Get servo position. """
+        dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(
+            self.portHandler, self.id, self.addr_present_position)
+        if dxl_comm_result != COMM_SUCCESS:
+            log.error("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
+        elif dxl_error != 0:
+            log.error("%s" % self.packetHandler.getRxPacketError(dxl_error))
+        return dxl_present_position
     
     def move(self, position):
         """ Move servo to position. """

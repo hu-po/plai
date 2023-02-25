@@ -11,24 +11,36 @@ http://localhost:7861
 """
 
 import gradio as gr
-from servo import servo_ctx
-from camera import camera_ctx
-from play import model, is_cat_imagenet
+from servo import Servo
+from typing import List
 
 
 def run(servo_1, servo_2):
-    with servo_ctx() as servo:
-        with camera_ctx() as get_image:
-            with model() as predict:
-                image = get_image()
-                output = predict(image)
-                cat_bool, raw = is_cat_imagenet(output)
-                msg = f"is cat: {cat_bool}\n"
-                for name, score in raw:
-                    msg += f"{name} {score}\n"
-                servo[0].move(servo_1)
-                servo[1].move(servo_2)
-    return image, msg
+    servos: List[Servo] = [
+        Servo(
+            servo_id=0,
+            min_degrees=0,
+            max_degrees=180,
+        ),
+        Servo(
+            servo_id=0,
+            min_degrees=0,
+            max_degrees=180,
+        ),
+    ]
+    # Connect the first servo
+    servos[0].connect()
+    # Copy the port handler and packet handler to the other servos
+    for servo in servos[1:]:
+        servo.portHandler = servos[0].portHandler
+        servo.packetHandler = servos[0].packetHandler
+    # Move the servos to a position
+    servo[0].move(servo_1)
+    servo[1].move(servo_2)
+    # Read the current position
+    pos_1 = servo[0].read()
+    pos_2 = servo[1].read()
+    return f"Servo 1: {pos_1}\nServo 2: {pos_2}"
 
 
 # Create interface
@@ -39,7 +51,6 @@ interface = gr.Interface(
         gr.Slider(minimum=0.0, maximum=1.0, value=0.5, label="Servo 2"),
     ],
     [
-        gr.Image(type="numpy", label="Processed Image"),
         gr.Textbox(lines=2, label="Output")
     ],
     title="Plai",
