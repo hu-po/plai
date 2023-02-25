@@ -19,13 +19,13 @@ def run(servo_1, servo_2):
     servos: List[Servo] = [
         Servo(
             id=1,
-            min_degrees=100,
-            max_degrees=150,
+            min_pos=853,
+            max_pos=1469,
         ),
         Servo(
             id=2,
-            min_degrees=0,
-            max_degrees=100,
+            min_pos=3660,
+            max_pos=4462,
         ),
     ]
     # Copy the port handler and packet handler to the other servos
