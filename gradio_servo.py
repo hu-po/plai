@@ -33,11 +33,11 @@ def run(servo_1, servo_2):
         servo.portHandler = servos[0].portHandler
         servo.packetHandler = servos[0].packetHandler
     # Move the servos to a position
-    servo[0].move(servo_1)
-    servo[1].move(servo_2)
+    servos[0].move(servo_1)
+    servos[1].move(servo_2)
     # Read the current position
-    pos_1 = servo[0].read()
-    pos_2 = servo[1].read()
+    pos_1 = servos[0].get_position()
+    pos_2 = servos[1].get_position()
     return f"Servo 1: {pos_1}\nServo 2: {pos_2}"
 
 
