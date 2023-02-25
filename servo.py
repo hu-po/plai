@@ -146,12 +146,11 @@ class Servo:
             self.enable_torque()
 
         # Convert action in [0, 1] to servo position [min_pos, max_pos].
-        dxl_goal_position = (
-            position * (self.max_pos - self.min_pos)) + self.min_pos
+        dxl_goal_position = position * (self.max_pos - self.min_pos) + self.min_pos
 
         # Write goal position
         dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(
-            self.portHandler, self.id, self.addr_goal_position, dxl_goal_position)
+            self.portHandler, self.id, self.addr_goal_position, int(dxl_goal_position))
         if dxl_comm_result != COMM_SUCCESS:
             log.error(f"{self.packetHandler.getTxRxResult(dxl_comm_result)}")
         elif dxl_error != 0:
