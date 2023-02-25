@@ -28,8 +28,6 @@ def run(servo_1, servo_2):
             max_degrees=100,
         ),
     ]
-    # Connect the first servo
-    servos[0].connect()
     # Copy the port handler and packet handler to the other servos
     for servo in servos[1:]:
         servo.portHandler = servos[0].portHandler
