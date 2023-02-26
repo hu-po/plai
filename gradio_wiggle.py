@@ -63,16 +63,11 @@ def run():
     return image, msg
 
 
-# Create interface
-interface = gr.Interface(
-    run,
-    [], [
-        gr.Image(type="numpy", label="Processed Image"),
-        gr.Textbox(lines=2, label="Output")
-    ],
-    title="Plai",
-    description="Control the servos",
-)
+with gr.Blocks() as demo:
+    gr.Markdown("## Plai - AI Cat Toy")
+    image = gr.Image(type="numpy", label="Image")
+    msg = gr.Textbox(lines=2, label="Message")
+    dep = demo.load(run, inputs=None, outputs=[image, msg], every=1)
 
 if __name__ == "__main__":
-    interface.launch()
+    demo.queue().launch()
