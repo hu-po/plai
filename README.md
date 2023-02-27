@@ -1,6 +1,6 @@
 ## Plai - The AI Robotic Cat Toy
 
-![Plai in a scifi landscape](https://github.com/hu-po/plai/coverimage.png)
+![Plai in a scifi landscape](coverimage.png)
 
 Plai is an AI robotic cat toy that uses advanced technology to play with your cat. Plai uses two robotic servos to hold a rod with a string attached to the end of the rod. When your cat is near, Plai can detect it and start wiggling the string to invite the cat to play. Plai is written in Python and uses Tensorflow, OpenCV, and Gradio as its dependencies.
 
