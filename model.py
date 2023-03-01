@@ -59,7 +59,7 @@ def model(*args, **kwds):
         pass
 
 
-def is_cat_imagenet(logits, threshold=2.0):
+def is_cat_imagenet(logits, threshold=5.0):
     """ Check if the model thinks it is a cat. """
     is_cat: bool = False
     cat_ids = set(IMAGENET_CATS.keys())    

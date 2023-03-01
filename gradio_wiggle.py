@@ -16,7 +16,7 @@ from typing import List
 import gradio as gr
 
 from camera import camera_ctx
-from play import is_cat_imagenet, model
+from model import is_cat_imagenet, model
 from servo import Servo
 
 
