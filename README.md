@@ -6,6 +6,8 @@ Plai is an AI robotic cat toy that uses advanced technology to play with your ca
 
 Plai is the perfect way to keep your cat entertained and help them stay active. With Plai, you can play with your cat even when you're not home. Plai can also help reduce stress and anxiety in cats by providing them with a consistent source of stimulation.
 
+[![IMAGE_ALT](https://img.youtube.com/vi/4cFTdp1ttPk/0.jpg)](https://www.youtube.com/watch?v=4cFTdp1ttPk)
+
 ## Setup
 
 ```
