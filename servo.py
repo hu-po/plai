@@ -213,5 +213,4 @@ def test_servos(
 
 if __name__ == "__main__":
     log.setLevel(logging.DEBUG)
-    test_dynamixel()
     test_servos()
