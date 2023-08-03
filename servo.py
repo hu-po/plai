@@ -32,6 +32,8 @@ class Servo:
         baudrate=57600,
         # Use the actual port assigned to the U2D2.
         # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
+        # May have to run `sudo chmod a+rw /dev/ttyUSB0` to get access to the port
+        # Or add a udev rule: https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_sdk/overview/#linux
         devicename='/dev/ttyUSB0',
         # MX series with 2.0 firmware update.
         addr_torque_enable=64,
@@ -177,6 +179,52 @@ class Servo:
                 log.debug(f"Servo {self.id} reached {dxl_goal_position}")
                 break
 
+def test_dynamixel():
+    id = 1
+    # Control table address
+    ADDR_MX_ID                = 7
+    ADDR_MX_BAUDRATE          = 8
+    # Protocol version
+    PROTOCOL_VERSION          = 1.0              
+    # Default setting
+    BAUDRATE                  = 57600             
+    DEVICENAME                = '/dev/ttyUSB0'    
+
+    # Create a port handler and packet handler
+    portHandler = PortHandler(DEVICENAME)
+    packetHandler = PacketHandler(PROTOCOL_VERSION)
+
+    # Open port
+    if not portHandler.openPort():
+        print("Failed to open the port")
+        return
+
+    # Set port baudrate
+    if not portHandler.setBaudRate(BAUDRATE):
+        print("Failed to change the baudrate")
+        return
+
+    # Read servo ID
+    dxl_id, dxl_comm_result, dxl_error = packetHandler.read1ByteTxRx(portHandler, id, ADDR_MX_ID)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))
+    else:
+        print("[ID:%03d] Servo ID: %d" % (id, dxl_id))
+
+    # Read servo baud rate
+    dxl_baudrate, dxl_comm_result, dxl_error = packetHandler.read1ByteTxRx(portHandler, id, ADDR_MX_BAUDRATE)
+    if dxl_comm_result != COMM_SUCCESS:
+        print("%s" % packetHandler.getTxRxResult(dxl_comm_result))
+    elif dxl_error != 0:
+        print("%s" % packetHandler.getRxPacketError(dxl_error))
+    else:
+        print("[ID:%03d] Servo Baud Rate: %d" % (id, dxl_baudrate))
+
+    # Close port
+    portHandler.closePort()
+
 def test_servos(
     servos: List[Servo] = [
         Servo(
@@ -208,4 +256,5 @@ def test_servos(
 
 if __name__ == "__main__":
     log.setLevel(logging.DEBUG)
+    test_dynamixel()
     test_servos()
