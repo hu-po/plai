@@ -12,7 +12,6 @@ from dynamixel_sdk import COMM_SUCCESS, PacketHandler, PortHandler
 
 log = logging.getLogger('plai')
 
-
 class Servo:
 
     def __init__(
@@ -212,5 +211,6 @@ def test_servos(
         log.debug(f"\n Servo 1: {pos_1:.2f}\n Servo 2: {pos_2:.2f}")
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     log.setLevel(logging.DEBUG)
     test_servos()
