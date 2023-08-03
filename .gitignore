@@ -6,6 +6,18 @@ __pycache__/
 # C extensions
 *.so
 
+# logs
+logs/
+
+# data
+data/
+
+# CSV files
+*.csv
+
+# Keys
+.keys/*
+
 # Distribution / packaging
 .Python
 build/
