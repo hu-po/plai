@@ -21,13 +21,22 @@ IMAGE_WIDTH = 224
 IMAGE_HEIGHT = 224
 FPS = 36
 
-
 @contextmanager
 def camera_ctx(
     width: int = IMAGE_WIDTH,
     height: int = IMAGE_HEIGHT,
     fps: int = FPS,
 ):
+    """Context manager for video capture.
+
+    Parameters:
+    width (int): The width of the video frames.
+    height (int): The height of the video frames.
+    fps (int): The frames per second of the video.
+
+    Yields:
+    function: A function that captures a frame and returns it as a numpy array.
+    """
     log.info("Starting video capture")
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -35,10 +44,18 @@ def camera_ctx(
     cap.set(cv2.CAP_PROP_FPS, fps)
 
     def np_image() -> np.ndarray:
+        """Capture a frame and return it as a numpy array.
+
+        Returns:
+        np.ndarray: The captured frame.
+
+        Raises:
+        RuntimeError: If a frame capture fails.
+        """
         ret, image = cap.read()
         if not ret:
             log.error("Failed to capture frame")
-            return None
+            raise RuntimeError("Failed to capture frame")
         # convert opencv output from BGR to RGB
         image = image[:, :, [2, 1, 0]]
         return image
@@ -47,4 +64,4 @@ def camera_ctx(
         yield np_image
     finally:
         log.info("Ended video capture")
-        del cap
+        cap.release()
