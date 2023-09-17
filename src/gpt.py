@@ -1,11 +1,11 @@
 import logging
 import os
 from typing import Dict, List, Tuple
-import pytest
 
 import openai
 
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+# ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = '/home/oop/dev/plai'
 KEYS_DIR = os.path.join(ROOT_DIR, ".keys")
 DEFAULT_LLM: str = "gpt-3.5-turbo"
 assert DEFAULT_LLM in [
@@ -16,7 +16,7 @@ assert DEFAULT_LLM in [
 DEFAULT_TEMPERATURE: float = 0
 DEFAULT_MAX_TOKENS: int = 64
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('plai')
 
 
 def set_openai_key(key=None) -> str:
@@ -53,6 +53,7 @@ def gpt_text(
     max_tokens: int = DEFAULT_MAX_TOKENS,
     stop: List[str] = ["\n"],
 ) -> str:
+    log.debug("Starting gpt_text function with parameters: messages=%s, model=%s, temperature=%s, max_tokens=%s, stop=%s", messages, model, temperature, max_tokens, stop)
     response: Dict = openai.ChatCompletion.create(
         messages=messages,
         model=model,
@@ -60,6 +61,7 @@ def gpt_text(
         max_tokens=max_tokens,
         stop=stop,
     )
+    log.debug("Received response from OpenAI: %s", response)
     return response["choices"][0]["message"]["content"]
 
 def gpt_trajectory(
@@ -120,3 +122,4 @@ def gpt_trajectory(
 if __name__ == "__main__":
     logging.basicConfig(level=logging.WARNING)
     set_openai_key()
+    print(gpt_trajectory("min, max, min", num_keyframes=3))
