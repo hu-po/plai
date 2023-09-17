@@ -93,15 +93,16 @@ if __name__ == '__main__':
     # Initialize robot
     robot = Robot(dxl_ids, protocol_version, baudrate, device_name)
 
-    # Set goal position
-    goal_positions = [0, 0, 0]
+    # Set goal positions
+    goal_positions_list = [[0, 0, 0], [100, 200, 300], [500, 400, 300]]
 
-    # Move robot
-    robot.move(goal_positions)
+    for goal_positions in goal_positions_list:
+        # Move robot
+        robot.move(goal_positions)
 
-    # Get present position
-    positions = robot.get_position()
-    print(positions)
+        # Get present position
+        positions = robot.get_position()
+        print(positions)
 
     # Close robot
     robot.close()
