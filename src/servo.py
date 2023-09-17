@@ -1,216 +1,113 @@
-""" Main servo control class."""
-
 import logging
-import sys
-import termios
-import time
-import tty
-from typing import List
-
-from dynamixel_sdk import *
-from dynamixel_sdk import COMM_SUCCESS, PacketHandler, PortHandler
+from dynamixel_sdk import PortHandler, PacketHandler, GroupBulkWrite, GroupBulkRead, COMM_SUCCESS, DXL_LOBYTE, DXL_LOWORD, DXL_HIBYTE, DXL_HIWORD
 
 log = logging.getLogger('plai')
 
-class Servo:
-
-    def __init__(
-        self,
-        # Dynamixel servo ID
-        id=1,
-        # Minimum angle of servo (in dxl units)
-        min_pos=0,
-        # Maximum angle of servo (in dxl units)
-        max_pos=100,
-        # Timeout duration for servo moving to position
-        move_timeout=5,
-        # DYNAMIXEL Protocol Version (1.0 / 2.0)
-        # https://emanual.robotis.com/docs/en/dxl/protocol2/
-        protocol_version=2.0,
-        # Define the proper baudrate to search DYNAMIXELs.
-        baudrate=57600,
-        # Use the actual port assigned to the U2D2.
-        # ex) Windows: "COM*", Linux: "/dev/ttyUSB*", Mac: "/dev/tty.usbserial-*"
-        # May have to run `sudo chmod a+rw /dev/ttyUSB0` to get access to the port
-        # Or add a udev rule: https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_sdk/overview/#linux
-        devicename='/dev/ttyUSB0',
-        # MX series with 2.0 firmware update.
-        addr_torque_enable=64,
-        addr_goal_position=116,
-        addr_present_position=132,
-        # Value for enabling the torque
-        torque_enable=1,
-        # Value for disabling the torque
-        torque_disable=0,
-        # Dynamixel moving status threshold
-        dxl_moving_status_threshold=10,
-    ):
-        self.id = id
-        self.min_pos = min_pos
-        self.max_pos = max_pos
-        self.move_timeout = move_timeout
-        self.protocol_version = protocol_version
-        self.baudrate = baudrate
-        self.devicename = devicename
-        self.addr_torque_enable = addr_torque_enable
-        self.addr_goal_position = addr_goal_position
-        self.addr_present_position = addr_present_position
-        self.torque_enable = torque_enable
-        self.torque_disable = torque_disable
-        self.dxl_moving_status_threshold = dxl_moving_status_threshold
-        self.torque_enabled = False
-
-        log.info("Starting Servo communication")
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-
-        def getch():
-            try:
-                tty.setraw(sys.stdin.fileno())
-                ch = sys.stdin.read(1)
-            finally:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            return ch
+class Robot:
+    def __init__(self, dxl_ids, protocol_version=2.0, baudrate=57600, device_name='/dev/ttyUSB0'):
+        self.dxl_ids = dxl_ids  # List of DYNAMIXEL IDs to control
+        self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
+        self.baudrate = baudrate  # Baudrate for DYNAMIXEL communication
+        self.device_name = device_name  # Name of the device (port) where DYNAMIXELs are connected
+        self.addr_torque_enable = 64  # Address for Torque Enable control table in DYNAMIXEL
+        self.addr_goal_position = 116  # Address for Goal Position control table in DYNAMIXEL
+        self.addr_present_position = 132  # Address for Present Position control table in DYNAMIXEL
+        self.torque_enable = 1  # Value to enable the torque
+        self.torque_disable = 0  # Value to disable the torque
 
         # Initialize PortHandler instance
-        # Set the port path
-        # Get methods and members of PortHandlerLinux or PortHandlerWindows
-        self.portHandler = PortHandler(self.devicename)
+        self.port_handler = PortHandler(self.device_name)
 
         # Initialize PacketHandler instance
-        # Set the protocol version
-        # Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
-        self.packetHandler = PacketHandler(self.protocol_version)
+        self.packet_handler = PacketHandler(self.protocol_version)
 
         # Open port
-        if self.portHandler.openPort():
-            log.info("Succeeded to open the port")
-        else:
+        if not self.port_handler.openPort():
             log.error("Failed to open the port")
-            log.error("Press any key to terminate...")
-            getch()
-            quit()
+            exit()
 
         # Set port baudrate
-        if self.portHandler.setBaudRate(self.baudrate):
-            log.info("Succeeded to change the baudrate")
-        else:
+        if not self.port_handler.setBaudRate(self.baudrate):
             log.error("Failed to change the baudrate")
-            log.error("Press any key to terminate...")
-            getch()
-            quit()
+            exit()
 
-        log.info("Servo communication started")
+        # Initialize GroupBulkWrite instance
+        self.group_bulk_write = GroupBulkWrite(self.port_handler, self.packet_handler)
 
-    def enable_torque(self):
-        # Enable Dynamixel Torque
-        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(
-            self.portHandler, self.id, self.addr_torque_enable, self.torque_enable)
-        if dxl_comm_result != COMM_SUCCESS:
-            log.error("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
-        elif dxl_error != 0:
-            log.error("%s" % self.packetHandler.getRxPacketError(dxl_error))
-        else:
-            log.info(f"Servo {self.id} torque enabled")
-        self.torque_enabled = True
+        # Initialize GroupBulkRead instance
+        self.group_bulk_read = GroupBulkRead(self.port_handler, self.packet_handler)
 
-    def disable_torque(self):
-        # Disable Dynamixel Torque
-        dxl_comm_result, dxl_error = self.packetHandler.write1ByteTxRx(
-            self.portHandler, self.id, self.addr_torque_enable, self.torque_disable)
-        if dxl_comm_result != COMM_SUCCESS:
-            log.error("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
-        elif dxl_error != 0:
-            log.error("%s" % self.packetHandler.getRxPacketError(dxl_error))
-        else:
-            log.info(f"Servo {self.id} torque disabled")
-        self.torque_enabled = False
+    def move(self, goal_positions):
+        # Enable torque for all servos and add goal position to the bulk write parameter storage
+        for dxl_id, goal_position in zip(self.dxl_ids, goal_positions):
+            dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable)
+            if dxl_comm_result != COMM_SUCCESS:
+                log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
+            elif dxl_error != 0:
+                log.error("%s" % self.packet_handler.getRxPacketError(dxl_error))
 
-    def __del__(self):
-        self.disable_torque()
-
-    def get_position(self):
-        """ Get servo position. """
-        dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(
-            self.portHandler, self.id, self.addr_present_position)
-        if dxl_comm_result != COMM_SUCCESS:
-            log.error("%s" % self.packetHandler.getTxRxResult(dxl_comm_result))
-        elif dxl_error != 0:
-            log.error("%s" % self.packetHandler.getRxPacketError(dxl_error))
-        return dxl_present_position
-
-    def move(self, position):
-        """ Move servo to position. """
-        assert 0 <= position <= 1, "Position must be between 0 and 1"
-
-        if not self.torque_enabled:
-            self.enable_torque()
-
-        # Convert action in [0, 1] to servo position [min_pos, max_pos].
-        dxl_goal_position = position * (self.max_pos - self.min_pos) + self.min_pos
+            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(goal_position)), DXL_HIBYTE(DXL_LOWORD(goal_position)),
+                                   DXL_LOBYTE(DXL_HIWORD(goal_position)), DXL_HIBYTE(DXL_HIWORD(goal_position))]
+            self.group_bulk_write.addParam(dxl_id, self.addr_goal_position, 4, param_goal_position)
 
         # Write goal position
-        dxl_comm_result, dxl_error = self.packetHandler.write4ByteTxRx(
-            self.portHandler, self.id, self.addr_goal_position, int(dxl_goal_position))
+        dxl_comm_result = self.group_bulk_write.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
-            log.error(f"{self.packetHandler.getTxRxResult(dxl_comm_result)}")
-        elif dxl_error != 0:
-            log.error(f"{self.packetHandler.getRxPacketError(dxl_error)}")
-        else:
-            log.info(f"Servo {self.id} set goal position to {position}")
+            log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
 
-        # Move to goal position with timeout
-        timeout_start = time.time()
-        while time.time() < timeout_start + self.move_timeout:
+        # Clear bulk write parameter storage
+        self.group_bulk_write.clearParam()
 
-            # Read present position
-            dxl_present_position, dxl_comm_result, dxl_error = self.packetHandler.read4ByteTxRx(
-                self.portHandler, self.id, self.addr_present_position)
-            if dxl_comm_result != COMM_SUCCESS:
-                log.error(
-                    f"{self.packetHandler.getTxRxResult(dxl_comm_result)}")
-            elif dxl_error != 0:
-                log.error(f"{self.packetHandler.getRxPacketError(dxl_error)}")
-            else:
-                log.debug(f"Servo {self.id} moving to {dxl_present_position}")
+    def get_position(self):
+        # Add present position value to the bulk read parameter storage
+        for dxl_id in self.dxl_ids:
+            dxl_addparam_result = self.group_bulk_read.addParam(dxl_id, self.addr_present_position, 4)
+            if not dxl_addparam_result:
+                log.error("[ID:%03d] groupBulkRead addparam failed" % dxl_id)
+                quit()
 
-            if not abs(dxl_goal_position - dxl_present_position) > self.dxl_moving_status_threshold:
-                log.debug(f"Servo {self.id} reached {dxl_goal_position}")
-                break
+        # Read present position
+        dxl_comm_result = self.group_bulk_read.txRxPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
 
-def test_servos(
-    servos: List[Servo] = [
-        Servo(
-            id=1,
-            min_pos=869,
-            max_pos=1420,
-        ),
-        Servo(
-            id=2,
-            min_pos=3700,
-            max_pos=4000,
-        ),
-    ]
-):
-    # Copy the port handler and packet handler to the other servos
-    for servo in servos[1:]:
-        servo.portHandler = servos[0].portHandler
-        servo.packetHandler = servos[0].packetHandler
-    # Enable the torque
-    for servo in servos:
-        servo.enable_torque()
-    # Wiggle the servos
-    for keyframe in [0.0, 1.0, 0.0]:
-        servos[0].move(keyframe)
-        servos[1].move(keyframe)
-        pos_1 = (servos[0].get_position() - servos[0].min_pos) / \
-            (servos[0].max_pos - servos[0].min_pos)
-        pos_2 = (servos[1].get_position() - servos[1].min_pos) / \
-            (servos[1].max_pos - servos[1].min_pos)
-        time.sleep(0.2)
-        log.debug(f"\n Servo 1: {pos_1:.2f}\n Servo 2: {pos_2:.2f}")
+        # Get present position value
+        positions = []
+        for dxl_id in self.dxl_ids:
+            dxl_present_position = self.group_bulk_read.getData(dxl_id, self.addr_present_position, 4)
+            positions.append(dxl_present_position)
 
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    log.setLevel(logging.DEBUG)
-    test_servos()
+        # Clear bulk read parameter storage
+        self.group_bulk_read.clearParam()
+
+        return positions
+
+    def close(self):
+        # Close port
+        self.port_handler.closePort()
+
+if __name__ == '__main__':
+    # Set robot parameters
+    dxl_ids = [1, 2, 3]
+    protocol_version = 2.0
+    baudrate = 57600
+    device_name = '/dev/ttyUSB0'
+
+    # Initialize robot
+    robot = Robot(dxl_ids, protocol_version, baudrate, device_name)
+
+    # Set goal positions
+    goal_positions_list = [[0, 0, 0], [100, 200, 300], [500, 400, 300]]
+
+    for goal_positions in goal_positions_list:
+        # Move robot
+        robot.move(goal_positions)
+        time.sleep(2)
+
+        # Get present position
+        positions = robot.get_position()
+        log.info(positions)
+
+    # Close robot
+    robot.close()
+
