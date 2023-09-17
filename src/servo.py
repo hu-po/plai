@@ -1,4 +1,6 @@
 import logging
+import time
+
 from dynamixel_sdk import PortHandler, PacketHandler, GroupBulkWrite, GroupBulkRead, COMM_SUCCESS, DXL_LOBYTE, DXL_LOWORD, DXL_HIBYTE, DXL_HIWORD
 
 log = logging.getLogger('plai')
