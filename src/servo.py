@@ -1,22 +1,49 @@
 import logging
 import time
 
-from dynamixel_sdk import PortHandler, PacketHandler, GroupBulkWrite, GroupBulkRead, COMM_SUCCESS, DXL_LOBYTE, DXL_LOWORD, DXL_HIBYTE, DXL_HIWORD
+from dynamixel_sdk import (
+    PortHandler,
+    PacketHandler,
+    GroupBulkWrite,
+    GroupBulkRead,
+    COMM_SUCCESS,
+    DXL_LOBYTE,
+    DXL_LOWORD,
+    DXL_HIBYTE,
+    DXL_HIWORD
+)
 
 log = logging.getLogger('plai')
 
 class Robot:
-    def __init__(self, dxl_ids, protocol_version=2.0, baudrate=57600, device_name='/dev/ttyUSB0'):
+    def __init__(
+        self, 
+        dxl_ids,
+        servo_1_range = [0, 360],
+        servo_2_range = [0, 360],
+        servo_3_range = [0, 360],
+        protocol_version=2.0,
+        baudrate=57600, 
+        device_name='/dev/ttyUSB0',
+        addr_torque_enable=64,
+        addr_goal_position=116,
+        addr_present_position=132,
+        torque_enable=1,
+        torque_disable=0
+    ):
         self.dxl_ids = dxl_ids  # List of DYNAMIXEL IDs to control
+        self.servo_1_range = servo_1_range  # Range of servo 1
+        self.servo_2_range = servo_2_range  # Range of servo 2
+        self.servo_3_range = servo_3_range  # Range of servo 3
         self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
         self.baudrate = baudrate  # Baudrate for DYNAMIXEL communication
         self.device_name = device_name  # Name of the device (port) where DYNAMIXELs are connected
-        self.addr_torque_enable = 64  # Address for Torque Enable control table in DYNAMIXEL
-        self.addr_goal_position = 116  # Address for Goal Position control table in DYNAMIXEL
-        self.addr_present_position = 132  # Address for Present Position control table in DYNAMIXEL
-        self.torque_enable = 1  # Value to enable the torque
-        self.torque_disable = 0  # Value to disable the torque
-
+        self.addr_torque_enable = addr_torque_enable  # Address for Torque Enable control table in DYNAMIXEL
+        self.addr_goal_position = addr_goal_position  # Address for Goal Position control table in DYNAMIXEL
+        self.addr_present_position = addr_present_position  # Address for Present Position control table in DYNAMIXEL
+        self.torque_enable = torque_enable  # Value to enable the torque
+        self.torque_disable = torque_disable  # Value to disable the torque
+        
         # Initialize PortHandler instance
         self.port_handler = PortHandler(self.device_name)
 
@@ -39,7 +66,28 @@ class Robot:
         # Initialize GroupBulkRead instance
         self.group_bulk_read = GroupBulkRead(self.port_handler, self.packet_handler)
 
-    def move(self, goal_positions):
+    def move(self, servo_1_degrees, servo_2_degrees, servo_3_degrees):
+        # Clip servo positions within specified range
+        servo_1_degrees = self.clip_position(servo_1_degrees, self.servo_1_range)
+        log.debug(f"Servo 1 degrees after clipping: {servo_1_degrees}")
+        servo_2_degrees = self.clip_position(servo_2_degrees, self.servo_2_range)
+        log.debug(f"Servo 2 degrees after clipping: {servo_2_degrees}")
+        servo_3_degrees = self.clip_position(servo_3_degrees, self.servo_3_range)
+        log.debug(f"Servo 3 degrees after clipping: {servo_3_degrees}")
+
+        # Convert servo positions to position values
+        servo_1_position = self.degrees_to_position(servo_1_degrees)
+        log.debug(f"Servo 1 position after conversion: {servo_1_position}")
+        servo_2_position = self.degrees_to_position(servo_2_degrees)
+        log.debug(f"Servo 2 position after conversion: {servo_2_position}")
+        servo_3_position = self.degrees_to_position(servo_3_degrees)
+        log.debug(f"Servo 3 position after conversion: {servo_3_position}")
+
+        # Set goal positions
+        goal_positions = [servo_1_position, servo_2_position, servo_3_position]
+        self.set_position(goal_positions)
+        
+    def set_position(self, goal_positions):
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for dxl_id, goal_position in zip(self.dxl_ids, goal_positions):
             dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable)
@@ -56,6 +104,8 @@ class Robot:
         dxl_comm_result = self.group_bulk_write.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
             log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
+        else:
+            log.debug(f"Goal position set to: {goal_positions}")
 
         # Clear bulk write parameter storage
         self.group_bulk_write.clearParam()
@@ -88,6 +138,29 @@ class Robot:
         # Close port
         self.port_handler.closePort()
 
+    @staticmethod
+    def degrees_to_position(degrees, max_position=4095, max_degrees=360):
+        """
+        Convert degrees to position value.
+        """
+        position = (degrees / max_degrees) * max_position
+        return int(position)
+
+    @staticmethod
+    def position_to_degrees(position, max_position=4095, max_degrees=360):
+        """
+        Convert position value to degrees.
+        """
+        degrees = (position / max_position) * max_degrees
+        return degrees
+
+    @staticmethod
+    def clip_position(degrees, degree_range=[0, 360]):
+        """
+        Clip position value within a specified range.
+        """
+        return max(min(degrees, degree_range[1]), degree_range[0])
+
 if __name__ == '__main__':
     # Set robot parameters
     dxl_ids = [1, 2, 3]
@@ -96,14 +169,27 @@ if __name__ == '__main__':
     device_name = '/dev/ttyUSB0'
 
     # Initialize robot
-    robot = Robot(dxl_ids, protocol_version, baudrate, device_name)
+    robot = Robot(
+        dxl_ids=dxl_ids,
+        servo_1_range=[0, 360],
+        servo_2_range=[0, 360],
+        servo_3_range=[0, 360],
+        protocol_version=protocol_version, 
+        baudrate=baudrate, 
+        device_name=device_name
+    )
 
     # Set goal positions
-    goal_positions_list = [[0, 0, 0], [100, 200, 300], [500, 400, 300]]
+    goal_positions_list = [
+        [0, 0, 0], 
+        [180, 180, 180], 
+        [0, 0, 0],
+        [360, 360, 360],
+    ]
 
     for goal_positions in goal_positions_list:
         # Move robot
-        robot.move(goal_positions)
+        robot.set_position(goal_positions)
         time.sleep(2)
 
         # Get present position
