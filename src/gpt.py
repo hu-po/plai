@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Dict, List, Tuple
+from trajectory import Trajectory
 
 import openai
 
@@ -62,8 +63,8 @@ def gpt_trajectory(
     trajectory_description: str,
     num_keyframes: int = 4,
     num_servos: int = 3,
-    keyframe_delimiter: str = ",",
-    servo_delimiter: str = " ",
+    keyframe_delimiter: str = ";",
+    servo_delimiter: str = ",",
     min_value: int = 0,
     max_value: int = 360,
 ) -> List[Tuple[int, int]]:

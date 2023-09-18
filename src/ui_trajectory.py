@@ -1,5 +1,6 @@
 import gradio as gr
-from src.gpt import gpt_trajectory
+from gpt import gpt_trajectory
+import logging
 
 def gradio_gpt_trajectory(trajectory_description: str):
     trajectory = gpt_trajectory(trajectory_description)
@@ -16,4 +17,5 @@ iface = gr.Interface(
 )
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     iface.launch()

@@ -18,13 +18,11 @@ Part of this project was built during a Livestream:
 
 [![IMAGE_ALT](https://img.youtube.com/vi/Fe1LQi8fMQ4/0.jpg)](https://www.youtube.com/watch?v=Fe1LQi8fMQ4)
 
-## Setup
+## Future Ideas
 
-```
-conda create --name plai python=3.10
-conda activate plai
-pip install -r requirements.txt
-```
+- [ ] trajectories as csv files
+- [ ] save and load trajectories, have them "compete"
+- [ ] reward metric?
 
 ## Citation
 

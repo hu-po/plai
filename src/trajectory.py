@@ -19,7 +19,7 @@ class Trajectory:
 
     def __str__(self):
         _trajectory = ''
-        for keyframe in self.keyframes:
+        for keyframe in self.trajectory:
             for servo in keyframe:
                 _trajectory += f'{servo}{self.servo_delimiter}'
             _trajectory += self.keyframe_delimiter
