@@ -71,7 +71,8 @@ class Robot:
         self, 
         servo_1_degrees: int, 
         servo_2_degrees: int, 
-        servo_3_degrees: int
+        servo_3_degrees: int,
+        sleep_time: float = 1.0,
     ) -> None:
         # Clip servo positions within specified range
         servo_1_degrees = self.clip_position(servo_1_degrees, self.servo_1_range)
@@ -92,6 +93,10 @@ class Robot:
         # Set goal positions
         goal_positions = [servo_1_position, servo_2_position, servo_3_position]
         self.set_position(goal_positions)
+
+        # Wait for the servos to move
+        log.debug(f"Waiting for {sleep_time} seconds")
+        time.sleep(sleep_time)
         
     def set_position(
         self, 
@@ -206,11 +211,7 @@ if __name__ == '__main__':
 
     # Set goal positions using the trajectory object
     for goal_positions in trajectory.trajectory:
-        # Move robot
         robot.set_position(list(goal_positions))
-        time.sleep(2)
-
-        # Get present position
         positions = robot.get_position()
         log.info(f"Present position: {positions}")
 
