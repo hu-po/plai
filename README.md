@@ -20,9 +20,14 @@ Part of this project was built during a Livestream:
 
 ## Future Ideas
 
-- [ ] trajectories as csv files
+- [ ] trajectories as csv files?
+- [ ] speech to text for move commands
+- [ ] sleep duration as part of move command
+- [ ] dictionary of valid commands
+- [ ] verification of individual commands with error handling
 - [ ] save and load trajectories, have them "compete"
 - [ ] reward metric?
+- [ ] copy over discord bot functionality
 
 ## Citation
 
