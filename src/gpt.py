@@ -4,19 +4,11 @@ from typing import Dict, List, Tuple
 
 import openai
 
-# ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = '/home/oop/dev/plai'
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEYS_DIR = os.path.join(ROOT_DIR, ".keys")
-DEFAULT_LLM: str = "gpt-3.5-turbo"
-assert DEFAULT_LLM in [
-    "gpt-3.5-turbo",
-    "gpt-4",
-    # TODO: llama through hf?
-]
-DEFAULT_TEMPERATURE: float = 0
-DEFAULT_MAX_TOKENS: int = 64
+DEFAULT_LLM: str = "gpt-4"
 
-log = logging.getLogger('plai')
+log = logging.getLogger(__name__)
 
 
 def set_openai_key(key=None) -> str:
@@ -42,7 +34,7 @@ def set_openai_key(key=None) -> str:
             return
     # Set the OpenAI API key
     openai.api_key = key
-    log.debug("OpenAI API key set.")
+    log.info("OpenAI API key set.")
     return key
 
 
@@ -53,7 +45,7 @@ def gpt_text(
     max_tokens: int = DEFAULT_MAX_TOKENS,
     stop: List[str] = ["\n"],
 ) -> str:
-    log.debug("Starting gpt_text function with parameters: messages=%s, model=%s, temperature=%s, max_tokens=%s, stop=%s", messages, model, temperature, max_tokens, stop)
+    log.debug(f"Sending messages to OpenAI: {messages}")
     response: Dict = openai.ChatCompletion.create(
         messages=messages,
         model=model,
@@ -61,27 +53,38 @@ def gpt_text(
         max_tokens=max_tokens,
         stop=stop,
     )
-    log.debug("Received response from OpenAI: %s", response)
-    return response["choices"][0]["message"]["content"]
+    reply: str = response["choices"][0]["message"]["content"]
+    log.debug(f"Received reply from OpenAI: {reply}")
+    return reply
+
+class Trajectory:
+    def __init__(self, keyframes: int = 4, description: str = '', num_servos: int = 3, keyframe_delimiter: str = ',', servo_delimiter: str = ' '):
+        self.keyframes = keyframes
+        self.description = description
+        self.num_servos = num_servos
+        self.keyframe_delimiter = keyframe_delimiter
+        self.servo_delimiter = servo_delimiter
+
+
 
 def gpt_trajectory(
     trajectory_description: str,
     num_keyframes: int = 4,
-    model="gpt-3.5-turbo",
-    num_servos: int = 2,
+    num_servos: int = 3,
     keyframe_delimiter: str = ",",
     servo_delimiter: str = " ",
     min_value: int = 0,
-    max_value: int = 255,
+    max_value: int = 360,
 ) -> List[Tuple[int, int]]:
     _messages = [
             {
                 "role": "system",
                 "content": " ".join(
                     [
-                        "Given a description of a trajectory, output the trajectory.",
+                        "Output a trajectory based on a string description of a trajectory and a number of keyframes.",
                         f"You output trajectories for a {num_servos}DoF robot arm.",
-                        f"The trajectory is list of integers between {min_value} and {max_value}.",
+                        f"A trajectory is a sequence of keyframes.",
+                        f"Each keyframe represents {num_servos} integer degree values for each servo between {min_value} and {max_value}.",
                         f"The delimiter used for the trajectory is {keyframe_delimiter}",
                         f"The delimiter used for the servo values is {servo_delimiter}",
                     ]
@@ -89,25 +92,26 @@ def gpt_trajectory(
             },
             {
                 "role": "user",
-                "content": "Give me a min, max, min trajectory with 3 keyframes.",
+                "content": "keyframes: 3, description: min, max, min",
             },
             {
                 "role": "assistant",
-                "content": f"{servo_delimiter.join(['0'] * num_servos)}{keyframe_delimiter}{servo_delimiter.join(['255'] * num_servos)}{keyframe_delimiter}{servo_delimiter.join(['0'] * num_servos)}",
+                "content": f"{servo_delimiter.join([str(min_value)] * num_servos)}{keyframe_delimiter}{servo_delimiter.join([str(max_value)] * num_servos)}{keyframe_delimiter}{servo_delimiter.join([str(min_value)] * num_servos)}",
             },
             {
                 "role": "user",
-                "content": "Give me a blip trajectory with 2 keyframes.",
+                "content": "keyframes: 2, description: zero to halfway",
             },
             {
                 "role": "assistant",
-                "content": f"{servo_delimiter.join(['0'] * num_servos)}{keyframe_delimiter}{servo_delimiter.join(['10'] * num_servos)}",
+                "content": f"{servo_delimiter.join([str(min_value)] * num_servos)}{keyframe_delimiter}{servo_delimiter.join([str(max_value//2)] * num_servos)}",
             },
             {
                 "role": "user",
-                "content": f"Give me a {trajectory_description} trajectory with {num_keyframes} keyframes.",
+                "content": f"keyframes: {num_keyframes}, description: {trajectory_description}",
             },
         ]
+    reply = gpt_text(messages=_messages)
     trajectory: List[Tuple[int, int]] = []
     for keyframe in gpt_text(
         messages=_messages,

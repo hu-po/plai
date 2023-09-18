@@ -13,23 +13,23 @@ from dynamixel_sdk import (
     DXL_HIWORD
 )
 
-log = logging.getLogger('plai')
+log = logging.getLogger(__name__)
 
 class Robot:
     def __init__(
         self, 
-        dxl_ids,
-        servo_1_range = [0, 360],
-        servo_2_range = [0, 360],
-        servo_3_range = [0, 360],
-        protocol_version=2.0,
-        baudrate=57600, 
-        device_name='/dev/ttyUSB0',
-        addr_torque_enable=64,
-        addr_goal_position=116,
-        addr_present_position=132,
-        torque_enable=1,
-        torque_disable=0
+        dxl_ids: List[int] = [1, 2, 3],
+        servo_1_range: List[int] = [0, 360],
+        servo_2_range: List[int] = [0, 360],
+        servo_3_range: List[int] = [0, 360],
+        protocol_version: float = 2.0,
+        baudrate: int = 57600, 
+        device_name: str = '/dev/ttyUSB0',
+        addr_torque_enable: int = 64,
+        addr_goal_position: int = 116,
+        addr_present_position: int = 132,
+        torque_enable: int = 1,
+        torque_disable: int = 0
     ):
         self.dxl_ids = dxl_ids  # List of DYNAMIXEL IDs to control
         self.servo_1_range = servo_1_range  # Range of servo 1
@@ -66,7 +66,12 @@ class Robot:
         # Initialize GroupBulkRead instance
         self.group_bulk_read = GroupBulkRead(self.port_handler, self.packet_handler)
 
-    def move(self, servo_1_degrees, servo_2_degrees, servo_3_degrees):
+    def move(
+        self, 
+        servo_1_degrees: int, 
+        servo_2_degrees: int, 
+        servo_3_degrees: int
+    ) -> None:
         # Clip servo positions within specified range
         servo_1_degrees = self.clip_position(servo_1_degrees, self.servo_1_range)
         log.debug(f"Servo 1 degrees after clipping: {servo_1_degrees}")
@@ -87,7 +92,10 @@ class Robot:
         goal_positions = [servo_1_position, servo_2_position, servo_3_position]
         self.set_position(goal_positions)
         
-    def set_position(self, goal_positions):
+    def set_position(
+        self, 
+        goal_positions: List[int]
+    ) -> None:
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for dxl_id, goal_position in zip(self.dxl_ids, goal_positions):
             dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable)
@@ -110,7 +118,7 @@ class Robot:
         # Clear bulk write parameter storage
         self.group_bulk_write.clearParam()
 
-    def get_position(self):
+    def get_position(self) -> List[int]:
         # Add present position value to the bulk read parameter storage
         for dxl_id in self.dxl_ids:
             dxl_addparam_result = self.group_bulk_read.addParam(dxl_id, self.addr_present_position, 4)
@@ -134,12 +142,16 @@ class Robot:
 
         return positions
 
-    def close(self):
+    def close(self) -> None:
         # Close port
         self.port_handler.closePort()
 
     @staticmethod
-    def degrees_to_position(degrees, max_position=4095, max_degrees=360):
+    def degrees_to_position(
+        degrees: int, 
+        max_position: int = 4095, 
+        max_degrees: int = 360
+    ) -> int:
         """
         Convert degrees to position value.
         """
@@ -147,7 +159,11 @@ class Robot:
         return int(position)
 
     @staticmethod
-    def position_to_degrees(position, max_position=4095, max_degrees=360):
+    def position_to_degrees(
+        position: int, 
+        max_position: int = 4095, 
+        max_degrees: int = 360
+    ) -> float:
         """
         Convert position value to degrees.
         """
@@ -155,18 +171,18 @@ class Robot:
         return degrees
 
     @staticmethod
-    def clip_position(degrees, degree_range=[0, 360]):
+    def clip_position(
+        degrees: int, 
+        degree_range: List[int] = [0, 360]
+    ) -> int:
         """
         Clip position value within a specified range.
         """
         return max(min(degrees, degree_range[1]), degree_range[0])
 
 if __name__ == '__main__':
-    # Set robot parameters
-    dxl_ids = [1, 2, 3]
-    protocol_version = 2.0
-    baudrate = 57600
-    device_name = '/dev/ttyUSB0'
+    # Set logging level
+    logging.basicConfig(level=logging.DEBUG)
 
     # Initialize robot
     robot = Robot(
@@ -194,7 +210,7 @@ if __name__ == '__main__':
 
         # Get present position
         positions = robot.get_position()
-        log.info(positions)
+        log.info(f"Present position: {positions}")
 
     # Close robot
     robot.close()
