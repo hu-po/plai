@@ -14,7 +14,6 @@ from contextlib import contextmanager
 import cv2
 import numpy as np
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 IMAGE_WIDTH = 224
@@ -37,7 +36,7 @@ def camera_ctx(
     Yields:
     function: A function that captures a frame and returns it as a numpy array.
     """
-    log.info("Starting video capture")
+    log.info(f"Starting video capture at {width}x{height} {fps}fps")
     cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
@@ -58,6 +57,7 @@ def camera_ctx(
             raise RuntimeError("Failed to capture frame")
         # convert opencv output from BGR to RGB
         image = image[:, :, [2, 1, 0]]
+        log.debug(f"Captured image {image.shape}")
         return image
 
     try:
