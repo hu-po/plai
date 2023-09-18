@@ -65,3 +65,10 @@ def camera_ctx(
     finally:
         log.info("Ended video capture")
         cap.release()
+
+if __name__ == "__main__":
+    with camera_ctx() as snapshot:
+        image = snapshot()
+    cv2.imshow("image", image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
