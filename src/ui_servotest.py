@@ -1,4 +1,5 @@
 import gradio as gr
+import logging
 
 def move_cat_toy(servo1, servo2, servo3):
     # For demonstration purposes, we will just return the angles of the servos.
@@ -18,4 +19,6 @@ iface = gr.Interface(
     live=True,
 )
 
-iface.launch()
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    iface.launch()

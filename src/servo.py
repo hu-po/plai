@@ -1,5 +1,6 @@
 import logging
 import time
+from trajectory import Trajectory
 
 from dynamixel_sdk import (
     PortHandler,
@@ -195,17 +196,18 @@ if __name__ == '__main__':
         device_name=device_name
     )
 
-    # Set goal positions
-    goal_positions_list = [
-        [0, 0, 0], 
-        [180, 180, 180], 
+    # Create a trajectory object from the goal positions list
+    trajectory = Trajectory([
+        [0, 0, 0],
+        [180, 180, 180],
         [0, 0, 0],
         [360, 360, 360],
-    ]
+    ])
 
-    for goal_positions in goal_positions_list:
+    # Set goal positions using the trajectory object
+    for goal_positions in trajectory.trajectory:
         # Move robot
-        robot.set_position(goal_positions)
+        robot.set_position(list(goal_positions))
         time.sleep(2)
 
         # Get present position
@@ -214,4 +216,5 @@ if __name__ == '__main__':
 
     # Close robot
     robot.close()
+
 
