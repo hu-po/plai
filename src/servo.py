@@ -1,7 +1,7 @@
 import logging
 import time
 from typing import List, Union
-from .trajectory import Trajectory
+from trajectory import Trajectory
 
 from dynamixel_sdk import (
     PortHandler,

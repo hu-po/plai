@@ -3,7 +3,7 @@ import time
 import re
 from typing import Callable, Dict, List, Union
 
-from .servo import Servos
+from servo import Servos
 
 log = logging.getLogger(__name__)
 
