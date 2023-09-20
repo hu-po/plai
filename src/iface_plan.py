@@ -7,7 +7,7 @@ def gradio_plan(description: str):
     raw_plan: str = plan_from_description(description)
     log.info(f"Running plan: {raw_plan}")
     bot.run_plan(plan)
-    return str(trajectory)
+    return raw_plan
 
 description = gr.inputs.Textbox(lines=2, label='Description')
 

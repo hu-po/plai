@@ -5,7 +5,7 @@ import subprocess
 import gradio as gr
 
 from src.iface_servo import iface_servo
-from src.iface_trajectory import iface_trajectory
+from src.iface_plan import iface_plan
 
 log = logging.getLogger(__name__)
 
