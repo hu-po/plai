@@ -63,7 +63,7 @@ class Robot:
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
-    robot = Robot()
+    bot = Robot()
     mock_plan = "; ".join([
         "move(0, 0, 0)",
         "sleep(1.0)",
@@ -74,9 +74,4 @@ if __name__ == "__main__":
         "move(360, 360, 360)",
         "sleep(1.0)",
     ])
-    robot.run_plan(mock_plan)
-
-
-
-    
-        
+    bot.run_plan(mock_plan)
