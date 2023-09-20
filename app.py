@@ -6,6 +6,7 @@ import gradio as gr
 
 from src.iface_servo import iface_servo
 from src.iface_plan import iface_plan
+from src.gpt import set_openai_key
 
 log = logging.getLogger(__name__)
 
@@ -21,6 +22,7 @@ iface_combined = gr.TabbedInterface([iface_servo, iface_plan], ["servo", "plan"]
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     try:
+        set_openai_key()
         process = remote_chromium_gradio_ui()
         iface_combined.launch()
     except KeyboardInterrupt:
