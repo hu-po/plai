@@ -1,5 +1,6 @@
 import gradio as gr
 import logging
+from servo import Robot
 
 def move(servo1, servo2, servo3):
     # Initialize robot
