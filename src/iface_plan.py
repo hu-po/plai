@@ -1,6 +1,11 @@
-import gradio as gr
-from plan import plan_from_description
 import logging
+
+import gradio as gr
+
+from .plan import plan_from_description
+from .robot import Robot
+
+log = logging.getLogger(__name__)
 
 def gradio_plan(description: str):
     bot = Robot()

@@ -1,5 +1,7 @@
-import gradio as gr
 import logging
+
+import gradio as gr
+
 from .servo import Servos
 
 log = logging.getLogger(__name__)

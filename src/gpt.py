@@ -1,11 +1,13 @@
 import logging
 import os
 from typing import Dict, List, Tuple
+
 import openai
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 KEYS_DIR = os.path.join(ROOT_DIR, ".keys")
-DEFAULT_LLM: str = "gpt-4"
+DEFAULT_LLM: str = "gpt-3.5-turbo"
+# DEFAULT_LLM: str = "gpt-4"
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +41,7 @@ def set_openai_key(key=None) -> str:
 
 def gpt_text(
     messages: List[Dict[str, str]] = None,
-    model="gpt-3.5-turbo",
+    model=DEFAULT_LLM,
     temperature: float = 0,
     max_tokens: int = 32,
     stop: List[str] = ["\n"],
