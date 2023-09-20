@@ -1,11 +1,11 @@
-import gradio as gr
-from gpt import gpt_trajectory
+import logging
 import os
 import subprocess
-import logging
 
-from src.iface_trajectory import iface_trajectory
+import gradio as gr
+
 from src.iface_servo import iface_servo
+from src.iface_trajectory import iface_trajectory
 
 log = logging.getLogger(__name__)
 
