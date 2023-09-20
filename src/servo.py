@@ -192,15 +192,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
     # Initialize robot
-    robot = Robot(
-        dxl_ids=dxl_ids,
-        servo_1_range=[0, 360],
-        servo_2_range=[0, 360],
-        servo_3_range=[0, 360],
-        protocol_version=protocol_version, 
-        baudrate=baudrate, 
-        device_name=device_name
-    )
+    robot = Robot()
 
     # Create a trajectory object from the goal positions list
     trajectory = Trajectory([
