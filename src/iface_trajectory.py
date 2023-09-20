@@ -1,5 +1,5 @@
 import gradio as gr
-from gpt import gpt_trajectory
+from .gpt import gpt_trajectory
 import logging
 
 def gradio_gpt_trajectory(trajectory_description: str):

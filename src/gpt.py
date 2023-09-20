@@ -1,7 +1,7 @@
 import logging
 import os
 from typing import Dict, List, Tuple
-from trajectory import Trajectory
+from .trajectory import Trajectory
 
 import openai
 
