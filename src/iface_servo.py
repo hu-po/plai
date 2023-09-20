@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 def move(servo1, servo2, servo3):
     servos = Servos()
-    servos.move(*robot.degrees_to_position([servo1, servo2, servo3]))
+    servos.move(*servos.degrees_to_position([servo1, servo2, servo3]))
     degrees = [servos.position_to_degrees(position) for position in servos.read_pos()]
     return f"Servo 1: {degrees[0]} degrees, Servo 2: {degrees[1]} degrees, Servo 3: {degrees[2]} degrees"
 

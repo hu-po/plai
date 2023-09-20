@@ -9,10 +9,10 @@ log = logging.getLogger(__name__)
 
 def gradio_plan(description: str):
     bot = Robot()
-    raw_plan: str = plan_from_description(description)
-    log.info(f"Running plan: {raw_plan}")
-    bot.run_plan(plan)
-    return raw_plan
+    _plan: str = plan_from_description(description)
+    log.info(f"Running plan: {_plan}")
+    bot.run_plan(_plan)
+    return _plan
 
 description = gr.inputs.Textbox(lines=2, label='Description')
 
