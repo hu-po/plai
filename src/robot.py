@@ -64,20 +64,16 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     robot = Robot()
-    # Monkeypatch for testing
-    robot.actions = {
-        "move": lambda *args: print(f"move({args})"),
-        "sleep": lambda *args: print(f"sleep({args})"),
-    }
-
     mock_plan = "; ".join([
-        "move(1, 5, 2)",
+        "move(0, 0, 0)",
         "sleep(1.0)",
-        "move(3, 4, 5)",
-        "sleep(1.5)",
-        "move(1, 6, 3)"
+        "move(180, 180, 180)",
+        "sleep(1.0)",
+        "move(0, 0, 0)",
+        "sleep(1.0)",
+        "move(360, 360, 360)",
+        "sleep(1.0)",
     ])
-
     robot.run_plan(mock_plan)
 
 
