@@ -16,7 +16,7 @@ def remote_chromium_gradio_ui(display_number: str = "0.0", localhost_port: str =
     return subprocess.Popen(_cmd, stdin=subprocess.PIPE)
 
 # Combine the interfaces into a single interface with separate tabs
-iface_combined = gr.TabbedInterface([iface_servo, iface_trajectory], ["servo", "trajectory"])
+iface_combined = gr.TabbedInterface([iface_servo, iface_plan], ["servo", "plan"])
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
