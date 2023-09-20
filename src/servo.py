@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import List
+from typing import List, Union
 from trajectory import Trajectory
 
 from dynamixel_sdk import (
@@ -155,27 +155,37 @@ class Robot:
 
     @staticmethod
     def degrees_to_position(
-        degrees: int, 
+        degrees: Union[int, List[int]], 
         max_position: int = 4095, 
         max_degrees: int = 360
-    ) -> int:
+    ) -> Union[int, List[int]]:
         """
         Convert degrees to position value.
+        If degrees is a list, return a list of positions.
         """
-        position = (degrees / max_degrees) * max_position
-        return int(position)
+        if isinstance(degrees, list):
+            positions = [(degree / max_degrees) * max_position for degree in degrees]
+            return [int(position) for position in positions]
+        else:
+            position = (degrees / max_degrees) * max_position
+            return int(position)
 
     @staticmethod
     def position_to_degrees(
-        position: int, 
+        position: Union[int, List[int]], 
         max_position: int = 4095, 
         max_degrees: int = 360
-    ) -> float:
+    ) -> Union[float, List[float]]:
         """
         Convert position value to degrees.
+        If position is a list, return a list of degrees.
         """
-        degrees = (position / max_position) * max_degrees
-        return degrees
+        if isinstance(position, list):
+            degrees = [(pos / max_position) * max_degrees for pos in position]
+            return degrees
+        else:
+            degrees = (position / max_position) * max_degrees
+            return degrees
 
     @staticmethod
     def clip_position(
