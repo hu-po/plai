@@ -194,19 +194,27 @@ if __name__ == '__main__':
     # Initialize robot
     robot = Robot()
 
+    log.debug(f"Testing set_position and get_position")
+    _degrees: List[int] = [0, 0, 0]
+    _position: List[int] = robot.degrees_to_position(_degrees)
+    log.debug(f"WRITE to: {_position} or {_degrees}")
+    robot.set_position(_position)
+    time.sleep(2)
+    _position = robot.get_position()
+    _degrees = robot.position_to_degrees(_position)
+    log.debug(f"READ position: {_position} or {_degrees}")
+
     # Create a trajectory object from the goal positions list
+    log.debug(f"Testing move")
     trajectory = Trajectory([
         [0, 0, 0],
         [180, 180, 180],
         [0, 0, 0],
         [360, 360, 360],
     ])
-
-    # Set goal positions using the trajectory object
-    for goal_positions in trajectory.trajectory:
-        robot.set_position(list(goal_positions))
-        positions = robot.get_position()
-        log.info(f"Present position: {positions}")
+    log.debug(f"Trajectory: {trajectory}")
+    for step in trajectory.trajectory:
+        robot.move(*step)
 
     # Close robot
     robot.close()
