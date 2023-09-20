@@ -17,7 +17,7 @@ from dynamixel_sdk import (
 
 log = logging.getLogger(__name__)
 
-class Robot:
+class Servos:
     def __init__(
         self, 
         dxl_ids: List[int] = [1, 2, 3],
@@ -93,13 +93,13 @@ class Robot:
 
         # Set goal positions
         goal_positions = [servo_1_position, servo_2_position, servo_3_position]
-        self.set_position(goal_positions)
+        self.write_pos(goal_positions)
 
         # Wait for the servos to move
         log.debug(f"Waiting for {sleep_time} seconds")
         time.sleep(sleep_time)
         
-    def set_position(
+    def write_pos(
         self, 
         goal_positions: List[int]
     ) -> None:
@@ -125,7 +125,7 @@ class Robot:
         # Clear bulk write parameter storage
         self.group_bulk_write.clearParam()
 
-    def get_position(self) -> List[int]:
+    def read_pos(self) -> List[int]:
         # Add present position value to the bulk read parameter storage
         for dxl_id in self.dxl_ids:
             dxl_addparam_result = self.group_bulk_read.addParam(dxl_id, self.addr_present_position, 4)
@@ -202,15 +202,15 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
 
     # Initialize robot
-    robot = Robot()
+    robot = Servos()
 
-    log.debug(f"Testing set_position and get_position")
+    log.debug(f"Testing write_pos and read_pos")
     _degrees: List[int] = [0, 0, 0]
     _position: List[int] = robot.degrees_to_position(_degrees)
     log.debug(f"WRITE to: {_position} or {_degrees}")
-    robot.set_position(_position)
+    robot.write_pos(_position)
     time.sleep(2)
-    _position = robot.get_position()
+    _position = robot.read_pos()
     _degrees = robot.position_to_degrees(_position)
     log.debug(f"READ position: {_position} or {_degrees}")
 
