@@ -1,7 +1,6 @@
 import logging
 import time
 from typing import List, Union
-from trajectory import Trajectory
 
 from dynamixel_sdk import (
     PortHandler,
@@ -73,7 +72,6 @@ class Servos:
         servo_1_degrees: int, 
         servo_2_degrees: int, 
         servo_3_degrees: int,
-        sleep_time: float = 1.0,
     ) -> None:
         # Clip servo positions within specified range
         servo_1_degrees = self.clip_position(servo_1_degrees, self.servo_1_range)
@@ -94,10 +92,6 @@ class Servos:
         # Set goal positions
         goal_positions = [servo_1_position, servo_2_position, servo_3_position]
         self.write_pos(goal_positions)
-
-        # Wait for the servos to move
-        log.debug(f"Waiting for {sleep_time} seconds")
-        time.sleep(sleep_time)
         
     def write_pos(
         self, 
@@ -214,17 +208,15 @@ if __name__ == '__main__':
     _degrees = robot.position_to_degrees(_position)
     log.debug(f"READ position: {_position} or {_degrees}")
 
-    # Create a trajectory object from the goal positions list
     log.debug(f"Testing move")
-    trajectory = Trajectory([
+    for step in [
         [0, 0, 0],
         [180, 180, 180],
         [0, 0, 0],
         [360, 360, 360],
-    ])
-    log.debug(f"Trajectory: {trajectory}")
-    for step in trajectory.trajectory:
+    ]:
         robot.move(*step)
+        time.sleep(1)
 
     # Close robot
     robot.close()
