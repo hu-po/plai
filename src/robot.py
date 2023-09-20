@@ -3,8 +3,8 @@ import time
 import re
 from typing import Callable, Dict, List, Union
 
-from servo import Servos
-from plan import PLAN_DELIMITER, PLAN_DATASET
+from .servo import Servos
+from .plan import PLAN_DELIMITER, PLAN_DATASET
 
 log = logging.getLogger(__name__)
 

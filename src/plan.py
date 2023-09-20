@@ -1,7 +1,7 @@
 import logging
 from typing import Callable, Dict, List, Union
 
-from gpt import gpt_text, set_openai_key
+from .gpt import gpt_text, set_openai_key
 
 log = logging.getLogger(__name__)
 
