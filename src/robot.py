@@ -4,6 +4,7 @@ import re
 from typing import Callable, Dict, List, Union
 
 from servo import Servos
+from plan import PLAN_DELIMITER, PLAN_DATASET
 
 log = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ class Robot:
 
     def run_plan(self,
         raw_plan: str,
-        plan_delimiter: str = ";",
+        plan_delimiter: str = PLAN_DELIMITER,
     ):
         # Use regex to extract the action name and its arguments
         action_pattern = re.compile(r'(\w+)\(([^)]*)\)')
@@ -64,14 +65,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
 
     bot = Robot()
-    mock_plan = "; ".join([
-        "move(0, 0, 0)",
-        "sleep(1.0)",
-        "move(180, 180, 180)",
-        "sleep(1.0)",
-        "move(0, 0, 0)",
-        "sleep(1.0)",
-        "move(360, 360, 360)",
-        "sleep(1.0)",
-    ])
-    bot.run_plan(mock_plan)
+    for plan_description, plan in PLAN_DATASET.items():
+        log.debug(f"Running plan: {plan_description}")
+        bot.run_plan(plan)

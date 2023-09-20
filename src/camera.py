@@ -16,15 +16,11 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
-IMAGE_WIDTH = 224
-IMAGE_HEIGHT = 224
-FPS = 36
-
 @contextmanager
 def camera_ctx(
-    width: int = IMAGE_WIDTH,
-    height: int = IMAGE_HEIGHT,
-    fps: int = FPS,
+    width: int = 224,
+    height: int = 224,
+    fps: int = 30,
 ):
     """Context manager for video capture.
 
