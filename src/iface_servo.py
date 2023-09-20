@@ -2,17 +2,13 @@ import gradio as gr
 import logging
 from .servo import Robot
 
+log = logging.getLogger(__name__)
+
 def move(servo1, servo2, servo3):
-    # Initialize robot
     robot = Robot()
-    # Move the servos to the specified positions
-    robot.move(servo1, servo2, servo3)
-    # Get the current positions of the servos
-    positions = robot.get_position()
-    # Convert the positions to degrees
-    degrees = [robot.position_to_degrees(position) for position in positions]
-    # Return the current positions of the servos in degrees
-    return f"Servo 1: {degrees[0]}°\nServo 2: {degrees[1]}°\nServo 3: {degrees[2]}°"
+    robot.move(*robot.degrees_to_position([servo1, servo2, servo3]))
+    degrees = [robot.position_to_degrees(position) for position in robot.get_position()]
+    return f"Servo 1: {degrees[0]} degrees, Servo 2: {degrees[1]} degrees, Servo 3: {degrees[2]} degrees"
 
 # Sliders for each servo
 servo1_slider = gr.inputs.Slider(minimum=0, maximum=360, default=180, label='Servo 1')
