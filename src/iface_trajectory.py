@@ -10,7 +10,7 @@ def gradio_gpt_trajectory(trajectory_description: str):
 trajectory_description = gr.inputs.Textbox(lines=2, label='Trajectory Description')
 
 # Creating the interface
-iface = gr.Interface(
+iface_trajectory = gr.Interface(
     fn=gradio_gpt_trajectory,
     inputs=trajectory_description,
     outputs="text",

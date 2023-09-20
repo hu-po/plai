@@ -19,7 +19,7 @@ servo2_slider = gr.inputs.Slider(minimum=0, maximum=360, default=180, label='Ser
 servo3_slider = gr.inputs.Slider(minimum=0, maximum=360, default=180, label='Servo 3')
 
 # Creating the interface
-iface = gr.Interface(
+iface_servo = gr.Interface(
     fn=move,
     inputs=[servo1_slider, servo2_slider, servo3_slider],
     outputs="text",
