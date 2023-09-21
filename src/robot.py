@@ -4,6 +4,7 @@ import re
 from typing import Callable, Dict, List, Union
 
 from .servo import Servos
+from .camera import Camera
 from .plan import PLAN_DELIMITER, PLAN_DATASET
 
 log = logging.getLogger(__name__)
@@ -14,7 +15,10 @@ class Robot:
     def __init__(self):
         self.actions: Dict[str, Callable] = {}
         self.servos = Servos()
+        self.camera = Camera()
         self.actions["move"] = self.servos.move
+        self.actions["move_to"] = self.servos.move_to
+        self.actions["get_image"] = self.camera.get_image
         self.actions["sleep"] = time.sleep
 
     def run_plan(self,

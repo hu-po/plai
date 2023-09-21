@@ -1,44 +1,25 @@
-""" Camera code. 
-
-Check your camera is working with:
-
-v4l2-ctl --list-devices
-ffplay -f v4l2 -framerate 30 -video_size 224x224 -i /dev/video0
-
-"""
-
-import logging
-import time
-from contextlib import contextmanager
-
 import cv2
 import numpy as np
+import logging
 
 log = logging.getLogger(__name__)
 
-@contextmanager
-def camera_ctx(
-    width: int = 224,
-    height: int = 224,
-    fps: int = 30,
-):
-    """Context manager for video capture.
+class Camera:
+    def __init__(self, width: int = 224, height: int = 224, fps: int = 30):
+        """Initializes the video capture.
 
-    Parameters:
-    width (int): The width of the video frames.
-    height (int): The height of the video frames.
-    fps (int): The frames per second of the video.
+        Parameters:
+        width (int): The width of the video frames.
+        height (int): The height of the video frames.
+        fps (int): The frames per second of the video.
+        """
+        log.info(f"Starting video capture at {width}x{height} {fps}fps")
+        self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        self.cap.set(cv2.CAP_PROP_FPS, fps)
 
-    Yields:
-    function: A function that captures a frame and returns it as a numpy array.
-    """
-    log.info(f"Starting video capture at {width}x{height} {fps}fps")
-    cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-    cap.set(cv2.CAP_PROP_FPS, fps)
-
-    def np_image() -> np.ndarray:
+    def get_image(self) -> np.ndarray:
         """Capture a frame and return it as a numpy array.
 
         Returns:
@@ -47,7 +28,7 @@ def camera_ctx(
         Raises:
         RuntimeError: If a frame capture fails.
         """
-        ret, image = cap.read()
+        ret, image = self.cap.read()
         if not ret:
             log.error("Failed to capture frame")
             raise RuntimeError("Failed to capture frame")
@@ -56,15 +37,14 @@ def camera_ctx(
         log.debug(f"Captured image {image.shape}")
         return image
 
-    try:
-        yield np_image
-    finally:
+    def __del__(self):
+        """Releases the video capture when the object is deleted."""
         log.info("Ended video capture")
-        cap.release()
+        self.cap.release()
 
 if __name__ == "__main__":
-    with camera_ctx() as snapshot:
-        image = snapshot()
+    camera = Camera()
+    image = camera.get_image()
     cv2.imshow("image", image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
