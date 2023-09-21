@@ -1,5 +1,6 @@
 import logging
 import time
+from datetime import timedelta
 from typing import List, Union
 
 from dynamixel_sdk import (
@@ -92,6 +93,30 @@ class Servos:
         # Set goal positions
         goal_positions = [servo_1_position, servo_2_position, servo_3_position]
         self.write_pos(goal_positions)
+
+    def move_to(
+        self, 
+        servo_1_degrees: int, 
+        servo_2_degrees: int, 
+        servo_3_degrees: int,
+        epsilon_degrees: float = 3.0,
+        timeout: timedelta = timedelta(seconds=3),
+    ) -> None:
+        self.move(servo_1_degrees, servo_2_degrees, servo_3_degrees)
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > timeout.total_seconds():
+                log.error(f"Timeout exceeded on move_to: {timeout}s")
+                break
+            positions = self.read_pos()
+            degrees = self.position_to_degrees(positions)
+            log.debug(f"Servo positions: {degrees}")
+            # cumulative error
+            error = sum([abs(degrees[i] - [servo_1_degrees, servo_2_degrees, servo_3_degrees][i]) for i in range(3)])
+            if error < epsilon_degrees:
+                log.info(f"Move to complete: {degrees}")
+                break
+
         
     def write_pos(
         self, 
@@ -218,6 +243,15 @@ if __name__ == '__main__':
         robot.move(*step)
         time.sleep(1)
 
+    log.debug(f"Testing move_to")
+    for step in [
+        [0, 0, 0],
+        [180, 180, 180],
+        [0, 0, 0],
+        [360, 360, 360],
+    ]:
+        robot.move_to(*step)
+        
     # Close robot
     robot.close()
 
