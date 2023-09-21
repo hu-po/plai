@@ -4,7 +4,7 @@ from .camera import Camera
 
 log = logging.getLogger(__name__)
 
-def capture():
+def capture(*args, **kwargs):
     camera = Camera()
     image = camera.get_image()
     return image
