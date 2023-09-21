@@ -12,8 +12,8 @@ def capture():
 # Creating the interface
 iface_camera = gr.Interface(
     fn=capture,
-    inputs=gr.inputs.Button(label='Capture Image'),
-    outputs=gr.outputs.Image(),
+    inputs=gr.Button(label='Capture Image'),
+    outputs=gr.Image(),
 )
 
 if __name__ == "__main__":
