@@ -4,14 +4,19 @@ from .camera import Camera
 
 log = logging.getLogger(__name__)
 
-def capture(*args, **kwargs):
-    camera = Camera()
-    image = camera.get_image()
-    return image
+class CameraCapture:
+    def __init__(self):
+        self.camera = Camera()
+
+    def capture(self, *args, **kwargs):
+        image = self.camera.get_image()
+        return image
+
+camera_capture = CameraCapture()
 
 # Creating the interface
 iface_camera = gr.Interface(
-    fn=capture,
+    fn=camera_capture.capture,
     inputs=gr.Button(label='Capture Image'),
     outputs=gr.Image(),
 )
