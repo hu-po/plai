@@ -13,7 +13,7 @@ def capture_video(self, *args, **kwargs):
 iface_camera = gr.Interface(
     fn=capture_video,
     inputs=gr.Button(label='Capture Video'),
-    outputs=gr.Video(shape=(camera.fpo, 480, 640, 3)),  # camera.fpo is the number of frames in the video
+    outputs=gr.Video(shape=(8, 480, 640, 3)),  # camera.fpo is the number of frames in the video
 )
 
 if __name__ == "__main__":
