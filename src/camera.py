@@ -60,7 +60,7 @@ class Camera:
         RuntimeError: If the frame capture fails.
         """
         cap = self.start_capture()
-        raw_image = self.cap.stdout.read(self.width * self.height * 3)
+        raw_image = cap.stdout.read(self.width * self.height * 3)
         if not raw_image:
             log.error("Failed to capture frame")
             raise RuntimeError("Failed to capture frame")
@@ -83,7 +83,7 @@ class Camera:
         cap = self.start_capture()
         observation = np.zeros((self.fpo, self.height, self.width, 3), np.uint8)
         for i in range(self.fpo):
-            raw_image = self.cap.stdout.read(self.width * self.height * 3)
+            raw_image = cap.stdout.read(self.width * self.height * 3)
             if not raw_image:
                 log.error("Failed to capture frame")
                 raise RuntimeError("Failed to capture frame")
