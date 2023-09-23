@@ -18,7 +18,7 @@ camera_capture = CameraCapture()
 iface_camera = gr.Interface(
     fn=camera_capture.capture,
     inputs=gr.Button(label='Capture Image'),
-    outputs=gr.Image(),
+    outputs=gr.Image(shape=(480, 640, 3)),
 )
 
 if __name__ == "__main__":
