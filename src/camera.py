@@ -34,7 +34,7 @@ class Camera:
         RuntimeError: If a frame capture fails.
         """
         raw_image = self.process.stdout.read(self.width*self.height*3)
-        if raw_image is None:
+        if not raw_image:
             log.error("Failed to capture frame")
             raise RuntimeError("Failed to capture frame")
         image = np.frombuffer(raw_image, np.uint8).reshape([self.height, self.width, 3])
