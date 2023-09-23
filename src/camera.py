@@ -29,6 +29,7 @@ class Camera:
         self.fps = fps
         self.fpo = fpo
         self.device = device
+        self.cap = start_capture()
 
     def start_capture(self):
         """
@@ -59,15 +60,12 @@ class Camera:
         Raises:
         RuntimeError: If the frame capture fails.
         """
-        cap = self.start_capture()
-        raw_image = cap.stdout.read(self.width * self.height * 3)
+        raw_image = self.cap.stdout.read(self.width * self.height * 3)
         if not raw_image:
             log.error("Failed to capture frame")
             raise RuntimeError("Failed to capture frame")
         image = np.frombuffer(raw_image, np.uint8).reshape([self.height, self.width, 3])
         log.debug(f"Captured image {image.shape}")
-        cap.terminate()
-        log.debug("Ended video capture")
         return image
 
     def observe(self) -> np.ndarray:
@@ -80,10 +78,9 @@ class Camera:
         Raises:
         RuntimeError: If a frame capture fails.
         """
-        cap = self.start_capture()
         observation = np.zeros((self.fpo, self.height, self.width, 3), np.uint8)
         for i in range(self.fpo):
-            raw_image = cap.stdout.read(self.width * self.height * 3)
+            raw_image = self.cap.stdout.read(self.width * self.height * 3)
             if not raw_image:
                 log.error("Failed to capture frame")
                 raise RuntimeError("Failed to capture frame")
@@ -92,18 +89,12 @@ class Camera:
             )
             observation[i] = image
         log.debug(f"Captured {observation.shape}")
-        cap.terminate()
-        log.debug("Ended video capture")
         return observation
 
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    camera = Camera()
-    image = camera.get_image()
-    # Displaying the image requires a different approach as we're not using OpenCV anymore
-    # You can use matplotlib for example
-    import matplotlib.pyplot as plt
-
-    plt.imshow(image)
-    plt.show()
+    def __del__(self):
+        """
+        Deletes the video capture process.
+        """
+        log.info("Deleting video capture")
+        self.cap.stdin.close()
+        self.cap.wait()

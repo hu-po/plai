@@ -7,6 +7,9 @@ log = logging.getLogger(__name__)
 def capture_video(self, *args, **kwargs):
     camera = Camera()
     video = camera.observe()  # This method returns a 4D numpy array
+    del camera
+    # Convert the 4d numpy array to a video file
+    
     return video
 
 # Creating the interface
