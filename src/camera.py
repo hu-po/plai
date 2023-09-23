@@ -5,20 +5,21 @@ import ffmpeg
 log = logging.getLogger(__name__)
 
 class Camera:
-    def __init__(self, width: int = 224, height: int = 224, fps: int = 30):
+    def __init__(self, width: int = 640, height: int = 480, fps: int = 30, device: str = '/dev/video0'):
         """Initializes the video capture.
 
         Parameters:
         width (int): The width of the video frames.
         height (int): The height of the video frames.
         fps (int): The frames per second of the video.
+        device (str): The device to capture video from.
         """
         self.width = width
         self.height = height
         log.info(f"Starting video capture at {self.width}x{self.height} {fps}fps")
         self.process = (
             ffmpeg
-            .input('0', format='v4l2', video_size=f'{self.width}x{self.height}', framerate=fps)
+            .input(device, format='video4linux2', video_size=f'{self.width}x{self.height}', framerate=fps)
             .output('pipe:', format='rawvideo', pix_fmt='rgb24')
             .run_async(pipe_stdout=True)
         )
