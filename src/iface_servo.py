@@ -13,9 +13,9 @@ def move(servo1, servo2, servo3):
     return f"Servo 1: {degrees[0]} degrees, Servo 2: {degrees[1]} degrees, Servo 3: {degrees[2]} degrees"
 
 # Sliders for each servo
-servo1_slider = gr.Slider(minimum=0, maximum=360, default=180, label='Servo 1')
-servo2_slider = gr.Slider(minimum=0, maximum=360, default=180, label='Servo 2')
-servo3_slider = gr.Slider(minimum=0, maximum=360, default=180, label='Servo 3')
+servo1_slider = gr.Slider(minimum=0, maximum=360, value=180, label='Servo 1')
+servo2_slider = gr.Slider(minimum=0, maximum=360, value=180, label='Servo 2')
+servo3_slider = gr.Slider(minimum=0, maximum=360, value=180, label='Servo 3')
 
 # Creating the interface
 iface_servo = gr.Interface(
