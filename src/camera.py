@@ -1,8 +1,13 @@
-import cv2
 import numpy as np
 import logging
 
 log = logging.getLogger(__name__)
+
+try:
+    import cv2
+except ImportError:
+    log.error("OpenCV is not installed. Please install it to use the Camera class.")
+    cv2 = None
 
 class Camera:
     def __init__(self, width: int = 224, height: int = 224, fps: int = 30):
@@ -13,6 +18,8 @@ class Camera:
         height (int): The height of the video frames.
         fps (int): The frames per second of the video.
         """
+        if cv2 is None:
+            raise RuntimeError("OpenCV is not installed. Please install it to use the Camera class.")
         log.info(f"Starting video capture at {width}x{height} {fps}fps")
         self.cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
