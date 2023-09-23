@@ -3,11 +3,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
-try:
-    import cv2
-except ImportError:
-    log.error("OpenCV is not installed. Please install it to use the Camera class.")
-    cv2 = None
+if 'cv2' not in globals():
+    try:
+        import cv2
+    except ImportError:
+        log.error("OpenCV is not installed. Please install it to use the Camera class.")
+        cv2 = None
 
 class Camera:
     def __init__(self, width: int = 224, height: int = 224, fps: int = 30):
