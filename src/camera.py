@@ -13,10 +13,12 @@ class Camera:
         height (int): The height of the video frames.
         fps (int): The frames per second of the video.
         """
-        log.info(f"Starting video capture at {width}x{height} {fps}fps")
+        self.width = width
+        self.height = height
+        log.info(f"Starting video capture at {self.width}x{self.height} {fps}fps")
         self.process = (
             ffmpeg
-            .input('0', format='v4l2', video_size=f'{width}x{height}', framerate=fps)
+            .input('0', format='v4l2', video_size=f'{self.width}x{self.height}', framerate=fps)
             .output('pipe:', format='rawvideo', pix_fmt='rgb24')
             .run_async(pipe_stdout=True)
         )
@@ -30,11 +32,11 @@ class Camera:
         Raises:
         RuntimeError: If a frame capture fails.
         """
-        raw_image = self.process.stdout.read(width*height*3)
+        raw_image = self.process.stdout.read(self.width*self.height*3)
         if raw_image is None:
             log.error("Failed to capture frame")
             raise RuntimeError("Failed to capture frame")
-        image = np.frombuffer(raw_image, np.uint8).reshape([height, width, 3])
+        image = np.frombuffer(raw_image, np.uint8).reshape([self.height, self.width, 3])
         log.debug(f"Captured image {image.shape}")
         return image
 
