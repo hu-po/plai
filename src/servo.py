@@ -1,6 +1,7 @@
 import logging
 import time
 from datetime import timedelta
+from dataclasses import dataclass
 from typing import List, Union
 
 from dynamixel_sdk import (
@@ -17,6 +18,18 @@ from dynamixel_sdk import (
 
 log = logging.getLogger(__name__)
 
+@dataclass
+class Servo:
+    id: int
+    pos: int
+    range: Tuple[int, int]
+    desc: str
+
+log.info("Using robot 0.0.1 created on 26.09.2023")
+HIP = Servo(1, 0, (1676, 2293), "hip")
+TOY = Servo(2, 0, (1525, 2453), "toy")
+CAM = Servo(3, 0, (1816, 3007), "cam")
+
 class Servos:
     def __init__(
         self, 
@@ -24,6 +37,11 @@ class Servos:
         servo_1_range: List[int] = [0, 360],
         servo_2_range: List[int] = [0, 360],
         servo_3_range: List[int] = [0, 360],
+        # Servo range in hardware is [0, 4095]
+        # range from 26.09.2023
+        # id_1: [1676, 2293]
+        # id_2: [1525, 2453]
+        # id_3: [1816, 3007]
         protocol_version: float = 2.0,
         baudrate: int = 57600, 
         device_name: str = '/dev/ttyUSB0',
