@@ -33,15 +33,7 @@ CAM = Servo(3, 0, (1816, 3007), "cam")
 class Servos:
     def __init__(
         self, 
-        dxl_ids: List[int] = [1, 2, 3],
-        servo_1_range: List[int] = [0, 360],
-        servo_2_range: List[int] = [0, 360],
-        servo_3_range: List[int] = [0, 360],
-        # Servo range in hardware is [0, 4095]
-        # range from 26.09.2023
-        # id_1: [1676, 2293]
-        # id_2: [1525, 2453]
-        # id_3: [1816, 3007]
+        servos: List[Servo] = [HIP, TOY, CAM],
         protocol_version: float = 2.0,
         baudrate: int = 57600, 
         device_name: str = '/dev/ttyUSB0',
@@ -51,10 +43,9 @@ class Servos:
         torque_enable: int = 1,
         torque_disable: int = 0
     ):
-        self.dxl_ids = dxl_ids  # List of DYNAMIXEL IDs to control
-        self.servo_1_range = servo_1_range  # Range of servo 1
-        self.servo_2_range = servo_2_range  # Range of servo 2
-        self.servo_3_range = servo_3_range  # Range of servo 3
+        self.servos = servos  # List of Servo objects to control
+        self.dxl_ids = [servo.id for servo in servos]  # List of DYNAMIXEL IDs to control
+        self.servo_ranges = [servo.range for servo in servos]  # Ranges of servos
         self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
         self.baudrate = baudrate  # Baudrate for DYNAMIXEL communication
         self.device_name = device_name  # Name of the device (port) where DYNAMIXELs are connected
@@ -242,7 +233,7 @@ if __name__ == '__main__':
     robot = Servos()
 
     log.debug(f"Testing write_pos and read_pos")
-    _degrees: List[int] = [0, 0, 0]
+    _degrees: List[int] = [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]]
     _position: List[int] = robot.degrees_to_position(_degrees)
     log.debug(f"WRITE to: {_position} or {_degrees}")
     robot.write_pos(_position)
@@ -253,20 +244,20 @@ if __name__ == '__main__':
 
     log.debug(f"Testing move")
     for step in [
-        [0, 0, 0],
-        [180, 180, 180],
-        [0, 0, 0],
-        [360, 360, 360],
+        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
+        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
+        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
+        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
         robot.move(*step)
         time.sleep(1)
 
     log.debug(f"Testing move_to")
     for step in [
-        [0, 0, 0],
-        [180, 180, 180],
-        [0, 0, 0],
-        [360, 360, 360],
+        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
+        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
+        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
+        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
         robot.move_to(*step)
         
