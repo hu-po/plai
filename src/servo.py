@@ -13,10 +13,11 @@ from dynamixel_sdk import (
     DXL_LOBYTE,
     DXL_LOWORD,
     DXL_HIBYTE,
-    DXL_HIWORD
+    DXL_HIWORD,
 )
 
 log = logging.getLogger(__name__)
+
 
 @dataclass
 class Servo:
@@ -25,36 +26,48 @@ class Servo:
     range: Tuple[int, int]
     desc: str
 
+
 log.info("Using robot 0.0.1 created on 26.09.2023")
 HIP = Servo(1, 0, (1676, 2293), "hip")
 TOY = Servo(2, 0, (1525, 2453), "toy")
 CAM = Servo(3, 0, (1816, 3007), "cam")
 
+
 class Servos:
     def __init__(
-        self, 
+        self,
         servos: List[Servo] = [HIP, TOY, CAM],
         protocol_version: float = 2.0,
-        baudrate: int = 57600, 
-        device_name: str = '/dev/ttyUSB0',
+        baudrate: int = 57600,
+        device_name: str = "/dev/ttyUSB0",
         addr_torque_enable: int = 64,
         addr_goal_position: int = 116,
         addr_present_position: int = 132,
         torque_enable: int = 1,
-        torque_disable: int = 0
+        torque_disable: int = 0,
     ):
         self.servos = servos  # List of Servo objects to control
-        self.dxl_ids = [servo.id for servo in servos]  # List of DYNAMIXEL IDs to control
+        self.dxl_ids = [
+            servo.id for servo in servos
+        ]  # List of DYNAMIXEL IDs to control
         self.servo_ranges = [servo.range for servo in servos]  # Ranges of servos
-        self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
+        self.protocol_version = (
+            protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
+        )
         self.baudrate = baudrate  # Baudrate for DYNAMIXEL communication
-        self.device_name = device_name  # Name of the device (port) where DYNAMIXELs are connected
-        self.addr_torque_enable = addr_torque_enable  # Address for Torque Enable control table in DYNAMIXEL
-        self.addr_goal_position = addr_goal_position  # Address for Goal Position control table in DYNAMIXEL
+        self.device_name = (
+            device_name  # Name of the device (port) where DYNAMIXELs are connected
+        )
+        self.addr_torque_enable = (
+            addr_torque_enable  # Address for Torque Enable control table in DYNAMIXEL
+        )
+        self.addr_goal_position = (
+            addr_goal_position  # Address for Goal Position control table in DYNAMIXEL
+        )
         self.addr_present_position = addr_present_position  # Address for Present Position control table in DYNAMIXEL
         self.torque_enable = torque_enable  # Value to enable the torque
         self.torque_disable = torque_disable  # Value to disable the torque
-        
+
         # Initialize PortHandler instance
         self.port_handler = PortHandler(self.device_name)
 
@@ -78,9 +91,9 @@ class Servos:
         self.group_bulk_read = GroupBulkRead(self.port_handler, self.packet_handler)
 
     def move(
-        self, 
-        servo_1_degrees: int, 
-        servo_2_degrees: int, 
+        self,
+        servo_1_degrees: int,
+        servo_2_degrees: int,
         servo_3_degrees: int,
     ) -> None:
         # Clip servo positions within specified range
@@ -104,9 +117,9 @@ class Servos:
         self.write_pos(goal_positions)
 
     def move_to(
-        self, 
-        servo_1_degrees: int, 
-        servo_2_degrees: int, 
+        self,
+        servo_1_degrees: int,
+        servo_2_degrees: int,
         servo_3_degrees: int,
         epsilon_degrees: float = 3.0,
         timeout: timedelta = timedelta(seconds=3),
@@ -121,27 +134,39 @@ class Servos:
             degrees = self.position_to_degrees(positions)
             log.debug(f"Servo positions: {degrees}")
             # cumulative error
-            error = sum([abs(degrees[i] - [servo_1_degrees, servo_2_degrees, servo_3_degrees][i]) for i in range(3)])
+            error = sum(
+                [
+                    abs(
+                        degrees[i]
+                        - [servo_1_degrees, servo_2_degrees, servo_3_degrees][i]
+                    )
+                    for i in range(3)
+                ]
+            )
             if error < epsilon_degrees:
                 log.info(f"Move to complete: {degrees}")
                 break
 
-        
-    def write_pos(
-        self, 
-        goal_positions: List[int]
-    ) -> None:
+    def write_pos(self, goal_positions: List[int]) -> None:
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for dxl_id, goal_position in zip(self.dxl_ids, goal_positions):
-            dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable)
+            dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(
+                self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable
+            )
             if dxl_comm_result != COMM_SUCCESS:
                 log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
             elif dxl_error != 0:
                 log.error("%s" % self.packet_handler.getRxPacketError(dxl_error))
 
-            param_goal_position = [DXL_LOBYTE(DXL_LOWORD(goal_position)), DXL_HIBYTE(DXL_LOWORD(goal_position)),
-                                   DXL_LOBYTE(DXL_HIWORD(goal_position)), DXL_HIBYTE(DXL_HIWORD(goal_position))]
-            self.group_bulk_write.addParam(dxl_id, self.addr_goal_position, 4, param_goal_position)
+            param_goal_position = [
+                DXL_LOBYTE(DXL_LOWORD(goal_position)),
+                DXL_HIBYTE(DXL_LOWORD(goal_position)),
+                DXL_LOBYTE(DXL_HIWORD(goal_position)),
+                DXL_HIBYTE(DXL_HIWORD(goal_position)),
+            ]
+            self.group_bulk_write.addParam(
+                dxl_id, self.addr_goal_position, 4, param_goal_position
+            )
 
         # Write goal position
         dxl_comm_result = self.group_bulk_write.txPacket()
@@ -156,7 +181,9 @@ class Servos:
     def read_pos(self) -> List[int]:
         # Add present position value to the bulk read parameter storage
         for dxl_id in self.dxl_ids:
-            dxl_addparam_result = self.group_bulk_read.addParam(dxl_id, self.addr_present_position, 4)
+            dxl_addparam_result = self.group_bulk_read.addParam(
+                dxl_id, self.addr_present_position, 4
+            )
             if not dxl_addparam_result:
                 log.error("[ID:%03d] groupBulkRead addparam failed" % dxl_id)
                 quit()
@@ -169,7 +196,9 @@ class Servos:
         # Get present position value
         positions = []
         for dxl_id in self.dxl_ids:
-            dxl_present_position = self.group_bulk_read.getData(dxl_id, self.addr_present_position, 4)
+            dxl_present_position = self.group_bulk_read.getData(
+                dxl_id, self.addr_present_position, 4
+            )
             positions.append(dxl_present_position)
 
         # Clear bulk read parameter storage
@@ -183,9 +212,7 @@ class Servos:
 
     @staticmethod
     def degrees_to_position(
-        degrees: Union[int, List[int]], 
-        max_position: int = 4095, 
-        max_degrees: int = 360
+        degrees: Union[int, List[int]], max_position: int = 4095, max_degrees: int = 360
     ) -> Union[int, List[int]]:
         """
         Convert degrees to position value.
@@ -200,9 +227,9 @@ class Servos:
 
     @staticmethod
     def position_to_degrees(
-        position: Union[int, List[int]], 
-        max_position: int = 4095, 
-        max_degrees: int = 360
+        position: Union[int, List[int]],
+        max_position: int = 4095,
+        max_degrees: int = 360,
     ) -> Union[float, List[float]]:
         """
         Convert position value to degrees.
@@ -216,16 +243,20 @@ class Servos:
             return degrees
 
     @staticmethod
-    def clip_position(
-        degrees: int, 
-        degree_range: List[int] = [0, 360]
-    ) -> int:
+    def clip_position(degrees: int, degree_range: List[int] = [0, 360]) -> int:
         """
         Clip position value within a specified range.
         """
         return max(min(degrees, degree_range[1]), degree_range[0])
 
-if __name__ == '__main__':
+
+def test_servos(
+    matplotlib: bool = True,
+) -> None:
+    """
+    Test the Servo module.
+
+    """
     # Set logging level
     logging.basicConfig(level=logging.DEBUG)
 
@@ -292,19 +323,21 @@ if __name__ == '__main__':
         read()
         time.sleep(1)
         read()
-        
+
     # Close robot
     robot.close()
 
     # Plot commanded and true positions
     import matplotlib.pyplot as plt
+
     plt.figure()
-    plt.plot(commanded_timestamps, commanded_positions, label='Commanded Positions')
-    plt.plot(true_timestamps, true_positions, label='True Positions')
-    plt.xlabel('Time')
-    plt.ylabel('Positions')
+    plt.plot(commanded_timestamps, commanded_positions, label="Commanded Positions")
+    plt.plot(true_timestamps, true_positions, label="True Positions")
+    plt.xlabel("Time")
+    plt.ylabel("Positions")
     plt.legend()
     plt.show()
 
 
-
+if __name__ == "__main__":
+    test_servos()
