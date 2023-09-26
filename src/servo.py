@@ -1,5 +1,6 @@
 import logging
 import time
+import datetime
 from datetime import timedelta
 from dataclasses import dataclass
 from typing import List, Union, Tuple
@@ -278,12 +279,12 @@ def test_servos(
         log.debug(f"READ position: {_position} or {_degrees}")
 
     log.debug(f"Testing write_pos and read_pos")
-    _degrees: List[int] = [
+    _position: List[int] = [
         int((robot.servos[0].range[0] + robot.servos[0].range[1]) / 2),
         int((robot.servos[1].range[0] + robot.servos[1].range[1]) / 2),
         int((robot.servos[2].range[0] + robot.servos[2].range[1]) / 2),
     ]
-    _position: List[int] = robot.degrees_to_position(_degrees)
+    _degrees: List[int] = robot.position_to_degrees(_position)
     log.debug(f"WRITE to: {_position} or {_degrees}")
     read()
     robot.write_pos(_position)

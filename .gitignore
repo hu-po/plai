@@ -11,9 +11,13 @@ logs/
 
 # data
 data/
+*.png
 
 # CSV files
 *.csv
+
+# Dynamixel configs
+dynamixel-src
 
 # Keys
 .keys/*
