@@ -115,7 +115,7 @@ class Servos:
         if len(args) != len(self.servos):
             raise ValueError("Number of positions does not match the number of servos.")
         # Enable torque for all servos and add goal position to the bulk write parameter storage
-        for i, pos in enumerate(*args):
+        for i, pos in enumerate(args):
             dxl_id = self.servos[i].id
             clipped = min(max(pos, self.servos[i].range[0]), self.servos[i].range[1])
 
