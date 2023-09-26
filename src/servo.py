@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import timedelta
 from dataclasses import dataclass
-from typing import List, Union
+from typing import List, Union, Tuple
 
 from dynamixel_sdk import (
     PortHandler,
