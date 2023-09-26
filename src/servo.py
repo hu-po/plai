@@ -328,15 +328,16 @@ def test_servos(
     robot.close()
 
     # Plot commanded and true positions
-    import matplotlib.pyplot as plt
+    if matplotlib:
+        import matplotlib.pyplot as plt
 
-    plt.figure()
-    plt.plot(commanded_timestamps, commanded_positions, label="Commanded Positions")
-    plt.plot(true_timestamps, true_positions, label="True Positions")
-    plt.xlabel("Time")
-    plt.ylabel("Positions")
-    plt.legend()
-    plt.show()
+        plt.figure()
+        plt.plot(commanded_timestamps, commanded_positions, label="Commanded Positions")
+        plt.plot(true_timestamps, true_positions, label="True Positions")
+        plt.xlabel("Time")
+        plt.ylabel("Positions")
+        plt.legend()
+        plt.savefig("output.png")
 
 
 if __name__ == "__main__":
