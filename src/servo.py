@@ -232,15 +232,35 @@ if __name__ == '__main__':
     # Initialize robot
     robot = Servos()
 
+    # Initialize lists to store commanded and true positions
+    commanded_positions = []
+    true_positions = []
+    commanded_timestamps = []
+    true_timestamps = []
+
+    # Read positions for tests
+    def read():
+        _position = robot.read_pos()
+        true_positions.append(_position)
+        true_timestamps.append(datetime.datetime.now())
+        _degrees = robot.position_to_degrees(_position)
+        log.debug(f"READ position: {_position} or {_degrees}")
+
     log.debug(f"Testing write_pos and read_pos")
-    _degrees: List[int] = [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]]
+    _degrees: List[int] = [
+        int((robot.servos[0].range[0] + robot.servos[0].range[1]) / 2),
+        int((robot.servos[1].range[0] + robot.servos[1].range[1]) / 2),
+        int((robot.servos[2].range[0] + robot.servos[2].range[1]) / 2),
+    ]
     _position: List[int] = robot.degrees_to_position(_degrees)
     log.debug(f"WRITE to: {_position} or {_degrees}")
+    read()
     robot.write_pos(_position)
-    time.sleep(2)
-    _position = robot.read_pos()
-    _degrees = robot.position_to_degrees(_position)
-    log.debug(f"READ position: {_position} or {_degrees}")
+    read()
+    commanded_positions.append(_position)
+    commanded_timestamps.append(datetime.datetime.now())
+    time.sleep(0.1)
+    read()
 
     log.debug(f"Testing move")
     for step in [
@@ -249,8 +269,13 @@ if __name__ == '__main__':
         [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
         [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
+        read()
         robot.move(*step)
+        commanded_positions.append(step)
+        commanded_timestamps.append(datetime.datetime.now())
+        read()
         time.sleep(1)
+        read()
 
     log.debug(f"Testing move_to")
     for step in [
@@ -259,9 +284,27 @@ if __name__ == '__main__':
         [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
         [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
+        read()
         robot.move_to(*step)
+        commanded_positions.append(step)
+        commanded_timestamps.append(datetime.datetime.now())
+        read()
+        read()
+        time.sleep(1)
+        read()
         
     # Close robot
     robot.close()
+
+    # Plot commanded and true positions
+    import matplotlib.pyplot as plt
+    plt.figure()
+    plt.plot(commanded_timestamps, commanded_positions, label='Commanded Positions')
+    plt.plot(true_timestamps, true_positions, label='True Positions')
+    plt.xlabel('Time')
+    plt.ylabel('Positions')
+    plt.legend()
+    plt.show()
+
 
 
