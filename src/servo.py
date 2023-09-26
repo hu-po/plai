@@ -22,22 +22,23 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class Servo:
-    id: int
-    pos: int
-    range: Tuple[int, int]
-    desc: str
-
+    id: int # dynamixel id for servo
+    name: str # name of servo for llm use
+    range: Tuple[int, int] # (min, max) position values for servos (0, 4095)
+    desc: str # description of servo for llm use
 
 log.info("Using robot 0.0.1 created on 26.09.2023")
-HIP = Servo(1, 0, (1676, 2293), "hip")
-TOY = Servo(2, 0, (1525, 2453), "toy")
-CAM = Servo(3, 0, (1816, 3007), "cam")
+BOT = [
+    Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw"),
+    Servo(2, "toy", (1525, 2453),"tilts the toy arm up and down, pitch"),
+    Servo(3, "cam", (1816, 3007),"tilts the camera up and down, pitch"),
+]
 
 
 class Servos:
     def __init__(
         self,
-        servos: List[Servo] = [HIP, TOY, CAM],
+        servos: List[Servo] = BOT,
         protocol_version: float = 2.0,
         baudrate: int = 57600,
         device_name: str = "/dev/ttyUSB0",
@@ -48,6 +49,12 @@ class Servos:
         torque_disable: int = 0,
     ):
         self.servos = servos  # List of Servo objects to control
+        for servo in self.servos:
+            log.debug("---- Initialize servo ----")
+            log.debug(f"servo: {servo.name}")
+            log.debug(f"id: {servo.id}")
+            log.debug(f"range: {servo.range}")
+            log.debug(f"description: {servo.desc}")
         self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
         self.baudrate = baudrate  # Baudrate for DYNAMIXEL communication
         self.device_name = device_name  # Name of the device (port) where DYNAMIXELs are connected
@@ -82,19 +89,19 @@ class Servos:
     def move(self, *args: int) -> None:
         # The name of the function matters for LLMs, so this
         # simply maps move to write_pos
-        self.write_pos(goal_positions)
+        self.write_pos(*args)
 
     def move_to(
         self,
         *args: int,
-        epsilon: int = 3,
-        timedelta: timedelta = timedelta(seconds=3),
+        epsilon: int = 10,
+        time_limit: timedelta = timedelta(seconds=1.0),
     ) -> None:
         self.move(*args)
         start_time = time.time()
         while True:
-            if time.time() - start_time > timedelta.total_seconds():
-                log.error(f"Timeout exceeded on MOVE_TO: {timedelta}s")
+            if time.time() - start_time > time_limit.total_seconds():
+                log.error(f"Timeout exceeded on MOVE_TO: {time_limit}s")
                 break
             positions = self.read_pos()
             log.debug(f"Servo positions: {positions}")
@@ -110,7 +117,7 @@ class Servos:
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(*args):
             dxl_id = self.servos[i].id
-            clipped = min(max(pos, servo.min_angle), servo.max_angle)
+            clipped = min(max(pos, self.servos[i].range[0]), self.servos[i].range[1])
 
             dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(
                 self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable
@@ -139,7 +146,8 @@ class Servos:
 
     def read_pos(self) -> List[int]:
         # Add present position value to the bulk read parameter storage
-        for dxl_id in self.dxl_ids:
+        for i in range(len(self.servos)):
+            dxl_id = self.servos[i].id
             dxl_addparam_result = self.group_bulk_read.addParam(
                 dxl_id, self.addr_present_position, 4
             )
@@ -154,7 +162,8 @@ class Servos:
 
         # Get present position value
         positions = []
-        for dxl_id in self.dxl_ids:
+        for i in range(len(self.servos)):
+            dxl_id = self.servos[i].id
             dxl_present_position = self.group_bulk_read.getData(
                 dxl_id, self.addr_present_position, 4
             )
