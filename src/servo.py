@@ -28,7 +28,7 @@ class Servo:
     desc: str # description of servo for llm use
 
 log.info("Using robot 0.0.1 created on 26.09.2023")
-BOT = [
+DEFAULT_SERVOS = [
     Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw"),
     Servo(2, "toy", (1525, 2453),"tilts the toy arm up and down, pitch"),
     Servo(3, "cam", (1816, 3007),"tilts the camera up and down, pitch"),
@@ -38,7 +38,7 @@ BOT = [
 class Servos:
     def __init__(
         self,
-        servos: List[Servo] = BOT,
+        servos: List[Servo] = DEFAULT_SERVOS,
         protocol_version: float = 2.0,
         baudrate: int = 57600,
         device_name: str = "/dev/ttyUSB0",
