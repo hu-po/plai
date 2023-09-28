@@ -11,12 +11,52 @@ class Action:
     desc: str  # description of action for llm use
     args: List[Union[str, float, int]] = None  # arguments for the function
 
+DEFAULT_ACTIONS: Dict[str, Action] = {
+    "move": Action(
+        "move",
+        lambda *args: print(f"move({args})"),
+        "move the robot arm to a position",
+    ),
+    "sleep": Action(
+        "sleep",
+        lambda *args: print(f"sleep({args})"),
+        "wait for a period of time",
+    ),
+    "take_image": Action(
+        "take_image",
+        lambda *args: print(f"take_image({args})"),
+        "take an image",
+    ), 
+}
+
+PLAN_DATASET: Dict[str, str] = {
+    "halfway then back with one second sleeps" : PLAN_DELIMITER.join([
+        "move(0, 0, 0)",
+        "sleep(1.0)",
+        "move(180, 180, 180)",
+        "sleep(1.0)",
+        "move(0, 0, 0)",
+    ]),
+    "wait at the end" : PLAN_DELIMITER.join([
+        "move(360, 360, 360)",
+        "sleep(5.0)",
+    ]),
+    "wiggle" : PLAN_DELIMITER.join([
+        "move(90, 90, 90)",
+        "sleep(0.5)",
+        "move(45, 45, 45)",
+        "sleep(0.5)",
+        "move(90, 90, 90)",
+        "sleep(0.5)",
+        "move(135, 135, 135)",
+    ]),
+}
 
 class Plan:
     def __init__(
         self,
         raw_str: str,
-        actions: Dict[str, Action],
+        actions: Dict[str, Action] = DEFAULT_ACTIONS,
         action_pattern: re.Pattern = re.compile(r"(\w+)\(([^)]*)\)"),
         plan_delimiter: str = ";",
         args_delimiter: str = ",",
@@ -71,3 +111,35 @@ class Plan:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    from gpt import gpt_text, set_openai_key
+    set_openai_key()
+
+    def plan_from_description(
+        description: str,
+    ) -> str:
+        _messages = [
+            {
+                "role": "system",
+                "content": " ".join(
+                    [
+                        "Output a robot motion plan based on a string description.",
+                        "You output motion plans for a 3DoF robot arm.",
+                        f"Motion plans are sequences of python function calls delimited by {PLAN_DELIMITER}.",
+                    ]
+                ),
+            },
+        ]
+        for example_description, example_plan in PLAN_DATASET.items():
+            _messages.append({
+                "role": "user",
+                "content": example_description,
+            })
+            _messages.append({
+                "role": "assistant",
+                "content": example_plan,
+            })
+        _messages.append({
+            "role": "user",
+            "content": description,
+        })
+        return gpt_text(messages=_messages)

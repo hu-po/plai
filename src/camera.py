@@ -14,16 +14,6 @@ class Camera:
         fpo: int = 8,
         device: str = "/dev/video0",
     ):
-        """
-        Initializes the video capture.
-
-        Parameters:
-        width (int): The width of the video frames in pixels.
-        height (int): The height of the video frames in pixels.
-        fps (int): The frames per second of the video capture.
-        fpo (int): The frames per observation or capture.
-        device (str): The device identifier from which to capture video.
-        """
         self.width = width
         self.height = height
         self.fps = fps
@@ -32,12 +22,6 @@ class Camera:
         self.cap = start_capture()
 
     def start_capture(self):
-        """
-        Starts the video capture process.
-
-        Returns:
-        subprocess.Popen: The process that is capturing the video.
-        """
         log.info(f"Starting video capture at {self.width}x{self.height} {self.fps}fps")
         return (
             ffmpeg.input(
@@ -50,16 +34,7 @@ class Camera:
             .run_async(pipe_stdout=True)
         )
 
-    def get_image(self) -> np.ndarray:
-        """
-        Captures a single frame and returns it as a numpy array.
-
-        Returns:
-        np.ndarray: The captured frame as a 3D numpy array (height, width, RGB).
-
-        Raises:
-        RuntimeError: If the frame capture fails.
-        """
+    def image(self) -> np.ndarray:
         raw_image = self.cap.stdout.read(self.width * self.height * 3)
         if not raw_image:
             log.error("Failed to capture frame")
@@ -68,16 +43,7 @@ class Camera:
         log.debug(f"Captured image {image.shape}")
         return image
 
-    def observe(self) -> np.ndarray:
-        """
-        Captures a sequence of frames and returns them as a 4D numpy array.
-
-        Returns:
-        np.ndarray: The captured video as a 4D numpy array (frames, height, width, RGB).
-
-        Raises:
-        RuntimeError: If a frame capture fails.
-        """
+    def video(self) -> np.ndarray:
         observation = np.zeros((self.fpo, self.height, self.width, 3), np.uint8)
         for i in range(self.fpo):
             raw_image = self.cap.stdout.read(self.width * self.height * 3)
@@ -92,9 +58,6 @@ class Camera:
         return observation
 
     def __del__(self):
-        """
-        Deletes the video capture process.
-        """
         log.info("Deleting video capture")
         self.cap.stdin.close()
         self.cap.wait()
