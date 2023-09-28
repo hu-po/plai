@@ -23,9 +23,10 @@ class Robot:
         self.actions["sleep"] = time.sleep
 
     def observe():
-        pass
+        rerun.log_image
 
     def action():
+        pass
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
