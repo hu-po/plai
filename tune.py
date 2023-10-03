@@ -14,6 +14,9 @@ from src import train_valid, eval_from_episode_dir
 parser = argparse.ArgumentParser()
 parser.add_argument('--seed', type=int, default=DEFAULT_SEED)
 
+DEFAULT_SEED = 0  # Replace with your default seed
+OUTPUT_DIR = ""  # Replace with your data directory
+
 # Define the search space
 HYPERPARAMS = {
     'train_dir_name' : 'train',
@@ -110,7 +113,178 @@ HYPERPARAMS = {
     ]),
 }
 
-def sweep_episode(hparams) -> float:
+def train_valid(
+    run_name: str = "testytest",
+    output_dir: str = None,
+    train_dir: str = None,
+    valid_dir: str = None,
+    # Model
+    model: str = "vit_b",
+    weights_filepath: str = "path/to/model.pth",
+    freeze: bool = True,
+    save_model: bool = True,
+    num_channels: int = 256,
+    hidden_dim1: int = 128,
+    hidden_dim2: int = 64,
+    dropout_prob: int = 0.2,
+    # Training
+    device: str = None,
+    num_samples_train: int = 2,
+    num_samples_valid: int = 2,
+    num_epochs: int = 2,
+    warmup_epochs: int = 0,
+    batch_size: int = 1,
+    threshold: float = 0.3,
+    optimizer: str = "adam",
+    lr: float = 1e-5,
+    lr_sched = "cosine",
+    wd: float = 1e-4,
+    writer=None,
+    log_images: bool = False,
+    # Dataset
+    curriculum: str = "1",
+    resize: float = 1.0,
+    interp: str = "bilinear",
+    pixel_norm: bool = "mask",
+    crop_size: Tuple[int] = (3, 256, 256),
+    label_size: Tuple[int] = (8, 8),
+    min_depth: int = 0,
+    max_depth: int = 60,
+    **kwargs,
+):
+    device = get_device(device)
+    # device = "cpu"
+    sam_model = sam_model_registry[model](checkpoint=weights_filepath)
+    model = ClassyModel(
+        image_encoder=sam_model.image_encoder,
+        label_size = label_size,
+        num_channels = num_channels,
+        hidden_dim1 = hidden_dim1,
+        hidden_dim2 = hidden_dim2,
+        dropout_prob = dropout_prob,
+    )
+    model.train()
+    if freeze:
+        print("Freezing image encoder")
+        for param in model.image_encoder.parameters():
+            param.requires_grad = False
+    model.to(device=device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=wd)
+    loss_fn = nn.BCEWithLogitsLoss()
+    if lr_sched == "cosine":
+        _f = lambda x: warmup_cosine_annealing(x, num_epochs, warmup_epochs, eta_min=0.1 * lr, eta_max=lr)
+    elif lr_sched == "gamma":
+        _f = lambda x: warmup_gamma(x, num_epochs, warmup_epochs, gamma=0.9, eta_min=0.1 * lr, eta_max=lr)
+    else:
+        _f = lambda x: lr
+    lr_sched = LambdaLR(optimizer, _f)
+
+    step = 0
+    best_score_dict: Dict[str, float] = {}
+    for epoch in range(num_epochs):
+        print(f"\n\n --- Epoch {epoch+1} of {num_epochs} --- \n\n")
+        for phase, data_dir, num_samples in [
+            ("Train", train_dir, num_samples_train),
+            ("Valid", valid_dir, num_samples_valid),
+        ]:
+            for _dataset_id in curriculum:
+                _dataset_filepath = os.path.join(data_dir, _dataset_id)
+                _score_name = f"Dice/{phase}/{_dataset_id}"
+                if _score_name not in best_score_dict:
+                    best_score_dict[_score_name] = 0
+                _dataset = TiledDataset(
+                    data_dir=_dataset_filepath,
+                    crop_size=crop_size,
+                    label_size=label_size,
+                    resize=resize,
+                    interp=interp,
+                    pixel_norm=pixel_norm,
+                    min_depth=min_depth,
+                    max_depth=max_depth,
+                    train=True,
+                    device=device,
+                )
+                _dataloader = DataLoader(
+                    dataset=_dataset,
+                    batch_size=batch_size,
+                    sampler = RandomSampler(
+                        _dataset,
+                        num_samples=num_samples,
+                        # Generator with constant seed for reproducibility during validation
+                        generator=torch.Generator().manual_seed(42) if phase == "Valid" else None,
+                    ),
+                    pin_memory=True,
+                )
+                # TODO: prevent tqdm from printing on every iteration
+                _loader = tqdm(_dataloader, postfix=f"{phase}/{_dataset_id}/", position=0, leave=True)
+                score = 0
+                print(f"{phase} on {_dataset_filepath} ...")
+                for images, centerpoint, labels in _loader:
+                    step += 1
+                    if writer and log_images:
+                        writer.add_images(f"input-images/{phase}/{_dataset_id}", images, step)
+                        writer.add_images(f"input-labels/{phase}/{_dataset_id}", labels.to(dtype=torch.uint8).unsqueeze(1) * 255, step)
+                    images = images.to(dtype=torch.float32, device=device)
+                    labels = labels.to(dtype=torch.float32, device=device)
+                    preds = model(images)
+                    loss = loss_fn(preds, labels)
+                    optimizer.zero_grad()
+                    loss.backward()
+                    optimizer.step()
+                    _loss_name = f"{loss_fn.__class__.__name__}/{phase}/{_dataset_id}"
+                    _loader.set_postfix_str(f"{_loss_name}: {loss.item():.4f}")
+                    if writer:
+                        writer.add_scalar(_loss_name, loss.item(), step)
+                    with torch.no_grad():
+                        preds = (torch.sigmoid(preds) > threshold).to(dtype=torch.uint8)
+                        score += dice_score(preds, labels).item()
+                    if writer and log_images:
+                        writer.add_images(f"output-preds/{phase}/{_dataset_id}", preds.unsqueeze(1) * 255, step)
+                score /= len(_dataloader)
+                if writer:
+                    writer.add_scalar(f"Dice/{phase}/{_dataset_id}", score, step)
+                # Overwrite best score if it is better
+                if score > best_score_dict[_score_name]:
+                    print(f"New best score! {score:.4f} ")
+                    print(f"(was {best_score_dict[_score_name]:.4f})")
+                    best_score_dict[_score_name] = score
+                    if save_model:
+                        _model_filepath = os.path.join(
+                            output_dir,
+                            f"model.pth")
+                            #  f"model_{run_name}_best_{_dataset_id}.pth")
+                        print(f"Saving model to {_model_filepath}")
+                        torch.save(model.state_dict(), _model_filepath)
+                # Flush ever batch
+                writer.flush()
+    return best_score_dict
+
+def eval_from_episode_dir(
+    episode_dir: str = None,
+    eval_dir: str = None,
+    output_dir: str = None,
+    weights_filename: str = "model.pth",
+    hparams_filename: str = "hparams.yaml",
+    **kwargs,
+):
+    # Get hyperparams from text file
+    _hparams_filepath = os.path.join(episode_dir, hparams_filename)
+    with open(_hparams_filepath, "r") as f:
+        hparams = yaml.load(f, Loader=yaml.FullLoader)
+    _weights_filepath = os.path.join(episode_dir, weights_filename)
+    # Merge kwargs with hparams, kwargs takes precedence
+    hparams = {**hparams, **kwargs}
+    print(f"Hyperparams:\n{pprint.pformat(hparams)}\n")
+    # Make sure output dir exists
+    os.makedirs(output_dir, exist_ok=True)
+    eval(
+        eval_dir=eval_dir,
+        output_dir=output_dir,
+        weights_filepath=_weights_filepath,
+        **hparams,
+    )
+
+def episode(hparams) -> float:
 
     # Print hyperparam dict with logging
     print(f"\n\n Starting EPISODE \n\n")
@@ -130,10 +304,10 @@ def sweep_episode(hparams) -> float:
     with open(os.path.join(output_dir, 'hparams.yaml'), 'w') as f:
         yaml.dump(hparams, f)
 
-    # HACK: Convert Hyperparam strings to correct format
-    hparams['crop_size'] = [int(x) for x in hparams['crop_size_str'].split('.')]
-    model, weights_filepath = hparams['model_str'].split('|')
-    weights_filepath = os.path.join(MODEL_DIR, weights_filepath)
+    # Repurpose this to consume a string version of the arguments for an instance of the Servo class
+    servo_args = hparams['servo_args_str'].split(',')
+    # Example Servo object: Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw")
+    hparams['servo'] = Servo(int(servo_args[0]), servo_args[1], tuple(map(int, servo_args[2].split('-'))), servo_args[3])
 
     try:
         writer = SummaryWriter(logdir=output_dir)
@@ -178,9 +352,8 @@ def sweep_episode(hparams) -> float:
 if __name__ == "__main__":
     args = parser.parse_args()
     HYPERPARAMS['seed'] = args.seed
-    HYPERPARAMS['batch_size'] = args.batch_size
     best = fmin(
-        sweep_episode,
+        episode,
         space=HYPERPARAMS,
         algo=tpe.suggest,
         max_evals=100,
