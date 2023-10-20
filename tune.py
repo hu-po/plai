@@ -11,7 +11,6 @@ from tensorboardX import SummaryWriter
 from src import train, eval_from_dir
 
 DEFAULT_SEED = 0  # Replace with your default seed
-OUTPUT_DIR = ""  # Replace with your data directory
 DATA_DIR = os.environ['DATA_DIR']
 
 parser = argparse.ArgumentParser()
