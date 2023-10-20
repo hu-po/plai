@@ -5,6 +5,7 @@ import sys
 import gradio as gr
 from src.servo import Servos
 from src.camera import Camera
+from src.plan import Plan
 
 def remote_chromium_gradio_ui(
     display_number: str = "0.0",
@@ -51,6 +52,22 @@ iface_camera = gr.Interface(
     fn=capture_video,
     inputs=gr.Button(label='Capture Video'),
     outputs=gr.Video(shape=(8, 480, 640, 3)),  # camera.fpo is the number of frames in the video
+)
+
+# ----- Plan
+
+def gradio_plan(description: str):
+    _plan: str = plan_from_description(description)
+    bot.run_plan(_plan)
+    return _plan
+
+description = gr.inputs.Textbox(lines=2, label='Description')
+
+# Creating the interface
+iface_plan = gr.Interface(
+    fn=gradio_plan,
+    inputs=description,
+    outputs="text",
 )
 
 # Combine the interfaces into a single interface with separate tabs

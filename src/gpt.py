@@ -8,14 +8,6 @@ log = logging.getLogger(__name__)
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-
-def set_openai_key():
-    if client.api_key is None:
-        log.warning("OpenAI API key not found.")
-    else:
-        log.info("OpenAI API key set.")
-
-
 def gpt_text(
     messages: List[Dict[str, str]] = None,
     model="gpt-3.5-turbo",
@@ -37,6 +29,4 @@ def gpt_text(
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.WARNING)
-    set_openai_key()
     print(gpt_text(max_tokens=8, messages=[{"role": "user", "content": "hello"}]))
