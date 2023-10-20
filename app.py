@@ -5,7 +5,7 @@ import sys
 import gradio as gr
 from src.servo import Servos
 from src.camera import Camera
-from src.plan import Plan
+from src.plan import Plan, plan_from_description
 
 def remote_chromium_gradio_ui(
     display_number: str = "0.0",
@@ -39,7 +39,7 @@ iface_servo = gr.Interface(
 
 # ----- Camera
 
-def capture_video(self, *args, **kwargs):
+def capture_video():
     camera = Camera()
     video = camera.video()  # This method returns a 4D numpy array
     del camera
@@ -58,7 +58,6 @@ iface_camera = gr.Interface(
 
 def gradio_plan(description: str):
     _plan: str = plan_from_description(description)
-    bot.run_plan(_plan)
     return _plan
 
 description = gr.inputs.Textbox(lines=2, label='Description')
@@ -72,7 +71,7 @@ iface_plan = gr.Interface(
 
 # Combine the interfaces into a single interface with separate tabs
 iface_combined = gr.TabbedInterface(
-    [iface_servo, iface_camera],["servo", "camera"]
+    [iface_servo, iface_camera, iface_plan],["servo", "camera", "plan"]
 )
 
 if __name__ == "__main__":

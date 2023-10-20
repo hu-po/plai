@@ -1,7 +1,6 @@
 import argparse
 import os
 import pprint
-import shutil
 import uuid
 
 import numpy as np
@@ -9,14 +8,14 @@ import yaml
 from hyperopt import fmin, hp, tpe
 from tensorboardX import SummaryWriter
 
-from src import train_valid, eval_from_episode_dir
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--seed', type=int, default=DEFAULT_SEED)
+from src import train, eval_from_dir
 
 DEFAULT_SEED = 0  # Replace with your default seed
 OUTPUT_DIR = ""  # Replace with your data directory
 DATA_DIR = os.environ['DATA_DIR']
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--seed', type=int, default=DEFAULT_SEED)
 
 # Define the search space
 HYPERPARAMS = {
@@ -29,83 +28,6 @@ HYPERPARAMS = {
         # 'vit_h|sam_vit_h_4b8939.pth',
         # 'vit_l|sam_vit_l_0b3195.pth',
     ]),
-    'freeze': hp.choice('freeze', [
-        True,
-        # False, # Uses up too much memory
-    ]),
-    "hidden_dim1" : hp.choice("hidden_dim1", [
-        256,
-        128,
-        64,
-    ]),
-    "hidden_dim2" : hp.choice("hidden_dim2", [
-        256,
-        128,
-        64,
-    ]),
-    "dropout_prob" : hp.choice("dropout_prob", [
-        0.5,
-        0.2,
-        0,
-    ]),
-    # Dataset
-    'threshold': hp.choice('threshold', [
-        # 0.5,
-        0.2,
-        # 0.1,
-    ]),
-    'curriculum': hp.choice('curriculum', [
-        '1', # Depth of 1 - 40/45
-        # '2', # Depth of 1 - 53/58
-        # '3', # Depth of 1 - 48/53
-        # '123',
-    ]),
-    'num_samples_train': hp.choice('num_samples_train', [
-        # 2,
-        # 2000,
-        # 8000,
-        20000,
-        # 200000,
-    ]),
-    'num_samples_valid': hp.choice('num_samples_valid', [
-        # 2,
-        200,
-        # 8000,
-    ]),
-    'resize': hp.choice('resize', [
-        1.0, # Universal Harmonics
-        # 0.3,
-    ]),
-    'pixel_norm': hp.choice('pixel_norm', [
-        "mask",
-        "ink",
-        "bg",
-    ]),
-    'crop_size_str': hp.choice('crop_size_str', [
-        '256.256', # Universal Harmonics
-        # '128.128',
-        # '68.68',
-    ]),
-    'max_depth': hp.choice('max_depth', [
-        42, # Universal Harmonics
-    ]),
-    'lr_sched': hp.choice('lr_sched', [
-        # 'cosine',
-        # 'gamma',
-        'flat',
-    ]),
-    # Training
-    'seed': 0,
-    'batch_size' : 2,
-    'num_epochs': hp.choice('num_epochs', [
-        # 1,
-        # 8,
-        16,
-    ]),
-    'warmup_epochs': hp.choice('warmup_epochs', [
-        0,
-        1,
-    ]),
     'lr': hp.loguniform('lr',np.log(0.0001), np.log(0.01)),
     'wd': hp.choice('wd', [
         1e-4,
@@ -114,7 +36,22 @@ HYPERPARAMS = {
     ]),
 }
 
-def eval_from_episode_dir(
+def train(
+    run_name: str = "test",
+    output_dir = output_dir,
+    train_dir = train_dir,
+    valid_dir = valid_dir,
+    writer: SummaryWriter = None,
+    **kwargs,
+) -> Dict[str, float]:
+    pass
+    return {
+        "train_loss": train_loss,
+        "train_acc": train_acc,
+    }
+        
+
+def eval_from_dir(
     episode_dir: str = None,
     eval_dir: str = None,
     output_dir: str = None,
@@ -161,37 +98,23 @@ def episode(hparams) -> float:
     valid_dir = os.path.join(DATA_DIR, hparams['valid_dir_name'])
     eval_dir = os.path.join(DATA_DIR, hparams['eval_dir_name'])
 
-
-    # Repurpose this to consume a string version of the arguments for an instance of the Servo class
-    servo_args = hparams['servo_args_str'].split(',')
-    # Example Servo object: Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw")
-    hparams['servo'] = Servo(int(servo_args[0]), servo_args[1], tuple(map(int, servo_args[2].split('-'))), servo_args[3])
-
     try:
         writer = SummaryWriter(logdir=output_dir)
         # Train and evaluate a TFLite model
-        score_dict = train_valid(
+        score_dict = train(
             run_name =run_name,
             output_dir = output_dir,
             train_dir = train_dir,
             valid_dir = valid_dir,
-            model=model,
-            weights_filepath=weights_filepath,
             writer=writer,
             **hparams,
         )
         writer.add_hparams(hparams, score_dict)
-        eval_from_episode_dir(
+        eval_from_dir(
             eval_dir = eval_dir,
             episode_dir = output_dir,
             output_dir = output_dir,
-            eval_on = hparams['curriculum'],
-            max_num_samples_eval = 5000,
             max_time_hours = 0.1,
-            log_images = False,
-            save_pred_img = True,
-            save_submit_csv = False,
-            save_histograms = False,
             writer=writer,
             **hparams,
         )
