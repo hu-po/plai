@@ -16,6 +16,7 @@ parser.add_argument('--seed', type=int, default=DEFAULT_SEED)
 
 DEFAULT_SEED = 0  # Replace with your default seed
 OUTPUT_DIR = ""  # Replace with your data directory
+DATA_DIR = os.environ['DATA_DIR']
 
 # Define the search space
 HYPERPARAMS = {
@@ -146,17 +147,20 @@ def episode(hparams) -> float:
 
     # Create output directory based on run_name
     run_name: str = str(uuid.uuid4())[:8]
-    output_dir = os.path.join(OUTPUT_DIR, run_name)
+    output_dir = os.path.join(DATA_DIR, run_name)
     os.makedirs(output_dir, exist_ok=True)
+    hparams['run_name'] = run_name
+    hparams['output_dir'] = output_dir
+
+    # Save hyperparams to file with YAML
+    with open(os.path.join(output_dir, 'hparams.yaml'), 'w') as f:
+        yaml.dump(hparams, f)
 
     # Train and Validation directories
     train_dir = os.path.join(DATA_DIR, hparams['train_dir_name'])
     valid_dir = os.path.join(DATA_DIR, hparams['valid_dir_name'])
     eval_dir = os.path.join(DATA_DIR, hparams['eval_dir_name'])
 
-    # Save hyperparams to file with YAML
-    with open(os.path.join(output_dir, 'hparams.yaml'), 'w') as f:
-        yaml.dump(hparams, f)
 
     # Repurpose this to consume a string version of the arguments for an instance of the Servo class
     servo_args = hparams['servo_args_str'].split(',')
