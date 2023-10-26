@@ -97,6 +97,7 @@ class Servos:
         servos: List[Servo] = SERVOS,
         poses: Dict[str : Pose] = POSES,
         desc: str = ROBOT_DESCRIPTION,
+        move_desc: str = MOVE_DESCRIPTION,
         protocol_version: float = 2.0,
         baudrate: int = 57600,
         device_name: str = "/dev/ttyUSB0",
@@ -116,6 +117,7 @@ class Servos:
         self.num_servos: int = len(self.servos)  # Number of servos to control
         self.poses = poses # Dict of Pose objects to control
         self.desc = desc # Description of robot for llm use
+        self.move_desc = move_desc # Description of move for llm use
 
         # Dynamixel communication parameters
         self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
@@ -146,7 +148,7 @@ class Servos:
         desired_pose = llm_func(
                 max_tokens=8,
                 messages=[
-                    {"role": "system", "content": self.desc},
+                    {"role": "system", "content": self.desc + self.move_desc},
                     {"role": "user", "content": position_str},
                 ]
         )
