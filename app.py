@@ -20,8 +20,8 @@ def remote_chromium_gradio_ui(
 
 def move(servo1, servo2, servo3):
     servos = Servos()
-    servos.move(*servos.degrees_to_position([servo1, servo2, servo3]))
-    degrees = [servos.position_to_degrees(position) for position in servos.read_pos()]
+    servos.move(*servos.degrees_to_units([servo1, servo2, servo3]))
+    degrees = [servos.units_to_degrees(position) for position in servos._read_pos()]
     return f"Servo 1: {degrees[0]} degrees, Servo 2: {degrees[1]} degrees, Servo 3: {degrees[2]} degrees"
 
 # Sliders for each servo
