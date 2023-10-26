@@ -81,6 +81,16 @@ POSES: Dict[str : Pose] = {
 }
 """
 
+MOVE_DESCRIPTION: str = """
+Choose one of the valid poses given a user description.
+The name of the pose must match the name of one of the pose in the POSES dict.
+Here are some examples of user descriptions and correct pose choices:
+"go to the home position" -> "home"
+"face the forward direction" -> "forward"
+"look down" -> "down"
+The user will now describe a pose, return the name of one of the valid poses.
+"""
+
 class Servos:
     def __init__(
         self,
@@ -143,8 +153,9 @@ class Servos:
         log.debug(f"Desired pose: {desired_pose}")
         if desired_pose in self.poses:
             log.debug(f"Moving to pose: {desired_pose}")
-            self.move_to(*self.poses[desired_pose].angles)
-            return desired_pose
+            return self.move_to(*self.poses[desired_pose].angles)
+        else:
+            return "Invalid pose."
 
     def move(self, *args: int) -> List[int]:
         # The name of the function matters for LLMs, so this
@@ -155,22 +166,17 @@ class Servos:
     def move_to(
         self,
         *args: int,
-        epsilon: int = 10,
-        time_limit: timedelta = timedelta(seconds=1.0),
-    ) -> None:
-        self.move(*args)
+        epsilon: int = 10, # degrees
+        timeout: timedelta = timedelta(seconds=1.0), #timeout
+    ) -> str:
         start_time = time.time()
         while True:
-            if time.time() - start_time > time_limit.total_seconds():
-                log.error(f"Timeout exceeded on MOVE_TO: {time_limit}s")
-                break
-            positions = self._read_pos()
-            log.debug(f"Servo positions: {positions}")
-            # cumulative error
-            error = sum(abs(positions[i] - args[i]) for i in range(len(args)))
-            if error < epsilon:
-                log.info(f"MOVE_TO complete: {positions}")
-                break
+            elapsed_time = time.time() - start_time
+            positions = self.move(*args)
+            if epsilon > sum(abs(positions[i] - args[i]) for i in range(len(args))):
+                return f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {positions} degrees."
+            if elapsed_time > timeout.total_seconds():
+                return f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {positions} degrees."
 
     def _write_pos(self, *args: int) -> None:
         if len(args) != self.num_servos:
