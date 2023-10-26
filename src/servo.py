@@ -41,6 +41,21 @@ DEFAULT_SERVOS = [
     Servo(3, "pan", (988, 3007), "pans the head side to side horizontally")
 ]
 
+
+@dataclass
+class HeadPosition:
+    name: str # name of the position for llm use
+    angles: List[int] # list of int angles in degrees (0, 360)
+    desc: str # description of position for llm use
+
+DEFAULT_POSITIONS = [
+    HeadPosition("home", [180, 211, 180], "home position or look up"),
+    HeadPosition("forward", [180, 140, 180], "look ahead, facing forward"),
+    HeadPosition("tilted_right", [215, 130, 151], "looking forward, head tilted right"),
+    HeadPosition("tilted_left", [145, 130, 209], "looking forward, head tilted left"),
+    HeadPosition("down", [180, 94, 180], "looking down, facing forward")
+]
+
 class Servos:
     def __init__(
         self,
