@@ -27,13 +27,19 @@ class Servo:
     range: Tuple[int, int] # (min, max) position values for servos (0, 4095)
     desc: str # description of servo for llm use
 
-log.info("Using robot 0.0.1 created on 26.09.2023")
-DEFAULT_SERVOS = [
-    Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw"),
-    Servo(2, "toy", (1525, 2453),"tilts the toy arm up and down, pitch"),
-    Servo(3, "cam", (1816, 3007),"tilts the camera up and down, pitch"),
-]
+# log.info("Using robot 0.0.1 created on 26.09.2023")
+# DEFAULT_SERVOS = [
+#     Servo(1, "hip", (1676, 2293),"swings the robot horizontally from left to right, yaw"),
+#     Servo(2, "toy", (1525, 2453),"tilts the toy arm up and down, pitch"),
+#     Servo(3, "cam", (1816, 3007),"tilts the camera up and down, pitch"),
+# ]
 
+log.info("Using robot 0.1.0 created on 26.10.2023")
+DEFAULT_SERVOS = [
+    Servo(1, "roll", (1761, 2499), "rolls the neck left and right rotating the view"),
+    Servo(2, "tilt", (979, 2223), "tilts the head up and down vertically"),
+    Servo(3, "pan", (988, 3007), "pans the head side to side horizontally")
+]
 
 class Servos:
     def __init__(
