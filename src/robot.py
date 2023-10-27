@@ -291,6 +291,8 @@ class Robot:
         return positions
 
     def __del__(self, *args, **kwargs) -> None:
+        # Move to home position
+        self.move(self.poses["home"].angles)
         self.port_handler.closePort()
 
 
