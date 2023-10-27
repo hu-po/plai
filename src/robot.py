@@ -122,13 +122,11 @@ The user will now describe a pose, return the name of one of the valid poses.
 # Max for units is 4095, which is 360 degrees
 DEGREE_TO_UNIT: float = 4095 / 360.0
 
-def degrees_to_units(*degrees: int) -> int:
-    for degree in degrees:
-        yield int(degree * DEGREE_TO_UNIT)
+def degrees_to_units(degree: int) -> int:
+    return int(degree * DEGREE_TO_UNIT)
 
-def units_to_degrees(*positions: int) -> int:
-    for pos in positions:
-        yield int(pos / DEGREE_TO_UNIT)
+def units_to_degrees(position: int) -> int:
+    return int(position / DEGREE_TO_UNIT)
 
 class Robot:
 
