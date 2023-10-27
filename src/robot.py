@@ -50,9 +50,12 @@ POSES: Dict[str, Pose] = {
     "down": Pose("down", [180, 94, 180], "looking down, facing forward")
 }
 
-ROBOT_DESCRIPTION: str = f"""
+SYSTEM_PROMPT: str = f"""
 You are an llm control unit for a robot arm called {ROBOT_TOKEN}.
-{ROBOT_TOKEN} has with servos {SERVO_TOKEN} forming a kinematic chain.
+"""
+
+ROBOT_DESCRIPTION: str = f"""
+{ROBOT_TOKEN} has {len(SERVOS)} servos {SERVO_TOKEN} forming a kinematic chain.
 The Servo dataclass holds information for each {SERVO_TOKEN}:
 
 @dataclass
@@ -106,6 +109,32 @@ Format the command so that {ROBOT_TOKEN} can understand it.
    - {SERVO_TOKEN}: move to a specific pose based on description
    - {CAMERA_TOKEN}: take a picture with the camera
 """
+
+def move_with_prompt(self,
+    raw_move_str: int = "home",
+    llm_func: callable = None,
+    msg: str = f"""
+The user will describe in natural language a MOVE command.
+Format the command so that {ROBOT_TOKEN} can understand it.
+{ROBOT_TOKEN} will then execute the command.
+{ROBOT_TOKEN} can accept the following commands:
+{List[str](POSES.keys())}
+"""
+) -> str:
+    desired_pose = llm_func(
+            max_tokens=8,
+            messages=[
+                {"role": "system", "content": f"{SYSTEM_PROMPT}\n{msg}"},
+                {"role": "user", "content": raw_move_str},
+            ]
+    )
+    log.debug(f"Desired pose: {desired_pose}")
+    if desired_pose in POSES.keys():
+        log.debug(f"Moving to pose: {desired_pose}")
+        return self.move(self.poses[desired_pose].angles)
+    else:
+        return "Invalid pose."
+
 
 MOVE_DESCRIPTION: str = f"""
 {ROBOT_TOKEN} is going to {SERVO_TOKEN}.
@@ -178,24 +207,6 @@ class Robot:
             exit()
         self.group_bulk_write = GroupBulkWrite(self.port_handler, self.packet_handler)
         self.group_bulk_read = GroupBulkRead(self.port_handler, self.packet_handler)
-
-    def move_with_prompt(self,
-        position_str: int = "home",
-        llm_func: callable = None,
-    ) -> str:
-        desired_pose = llm_func(
-                max_tokens=8,
-                messages=[
-                    {"role": "system", "content": self.desc + self.move_desc},
-                    {"role": "user", "content": position_str},
-                ]
-        )
-        log.debug(f"Desired pose: {desired_pose}")
-        if desired_pose in self.poses:
-            log.debug(f"Moving to pose: {desired_pose}")
-            return self.move(self.poses[desired_pose].angles)
-        else:
-            return "Invalid pose."
 
     def move(
         self,
@@ -348,3 +359,4 @@ def test_servos(
 
 if __name__ == "__main__":
     test_servos()
+    test_camera()
