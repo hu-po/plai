@@ -210,7 +210,7 @@ class Robot:
                 elapsed_time = time.time() - start_time
                 msg += f"{ROBOT_TOKEN} commanded to position {goal_positions}"
                 self._write_position(goal_positions)
-                true_positions, read_log = self._read_pos()
+                true_positions = self._read_pos()
                 msg += f"{ROBOT_TOKEN} at position {true_positions}"
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
                     msg += f"MOVE succeeded in {elapsed_time} seconds."
