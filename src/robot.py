@@ -203,30 +203,28 @@ class Robot:
         epsilon: int = 10, # degrees
         timeout: timedelta = timedelta(seconds=1.0), #timeout
     ) -> str:
-        log: str = ""
+        msg: str = ""
         start_time = time.time()
         try:
             while True:
                 elapsed_time = time.time() - start_time
-                log += f"{ROBOT_TOKEN} commanded to position {goal_positions}"
-                write_log: str = self._write_position(goal_positions)
+                msg += f"{ROBOT_TOKEN} commanded to position {goal_positions}"
+                self._write_position(goal_positions)
                 true_positions, read_log = self._read_pos()
-                log += f"{ROBOT_TOKEN} at position {true_positions}"
+                msg += f"{ROBOT_TOKEN} at position {true_positions}"
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
-                    log += f"MOVE succeeded in {elapsed_time} seconds."
+                    msg += f"MOVE succeeded in {elapsed_time} seconds."
                     break
                 if elapsed_time > timeout.total_seconds():
-                    log += f"MOVE timed out after {elapsed_time} seconds."
+                    msg += f"MOVE timed out after {elapsed_time} seconds."
                     break 
-                
-        except:
-            log += f"ERROR: MOVE failed."
-            log += f"Log for write position:\n{write_log}"
-            log += f"Log for read position:\n{read_log}"
-            return log
+        except Exception as e:
+            msg += f"MOVE failed with exception {e}"
+            log.warning(msg)
+        return msg
 
     def _write_position(self, positions: List[int]) -> str:
-        log: str = ""
+        msg: str = ""
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(positions):
             pos = units_to_degrees(pos)
@@ -237,9 +235,10 @@ class Robot:
                 self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable
             )
             if dxl_comm_result != COMM_SUCCESS:
-                log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
+                msg += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
             elif dxl_error != 0:
-                log += f"ERROR: {self.packet_handler.getRxPacketError(dxl_error)}"
+                msg += f"ERROR: {self.packet_handler.getRxPacketError(dxl_error)}"
+                raise Exception(msg)
 
             self.group_bulk_write.addParam(
                 dxl_id, self.addr_goal_position, 4, [
@@ -248,21 +247,18 @@ class Robot:
                 DXL_LOBYTE(DXL_HIWORD(clipped)),
                 DXL_HIBYTE(DXL_HIWORD(clipped)),
             ])
-            log += f"WROTE: set position to {pos} degrees on servo id {i}"
 
         # Write goal position
         dxl_comm_result = self.group_bulk_write.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
-            log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
+            msg += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
+            raise Exception(msg)
 
         # Clear bulk write parameter storage
         self.group_bulk_write.clearParam()
-        # log += f"clearing bulk write parameter storage"
 
-        return log
-
-    def _read_pos(self) -> Tuple[List[int], str]:
-        log: str = ""
+    def _read_pos(self) -> List[int]:
+        msg: str = ""
         # Add present position value to the bulk read parameter storage
         for i in range(self.num_servos):
             dxl_id = self.servos[i].id
@@ -270,12 +266,14 @@ class Robot:
                 dxl_id, self.addr_present_position, 4
             )
             if not dxl_addparam_result:
-                log += f"ERROR: [ID:{dxl_id}] groupBulkRead addparam failed\n"
+                msg += f"ERROR: [ID:{dxl_id}] groupBulkRead addparam failed\n"
+                raise Exception(msg)
 
         # Read present position
         dxl_comm_result = self.group_bulk_read.txRxPacket()
         if dxl_comm_result != COMM_SUCCESS:
-            log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}\n"
+            msg += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}\n"
+            raise Exception(msg)
 
         # Get present position value
         positions = []
@@ -285,20 +283,18 @@ class Robot:
                 dxl_id, self.addr_present_position, 4
             )
             positions.append(dxl_present_position)
-            log += f"READ: servo id {i} present position is {dxl_present_position}\n"
 
         # Clear bulk read parameter storage
         self.group_bulk_read.clearParam()
-        # log += f"clearing bulk read parameter storage"
 
-        return positions, log
+        return positions
 
     def __del__(self, *args, **kwargs) -> None:
         self.port_handler.closePort()
 
 
 def test_servos(
-    matplotlib: bool = True,
+    matplotlib: bool = False,
 ) -> None:
     """
     Test the Servo module.
@@ -325,7 +321,7 @@ def test_servos(
         robot.move(step)
         commanded_positions.append(step)
         commanded_timestamps.append(datetime.now())
-        time.sleep(1)
+        time.sleep(2)
 
     # Close robot
     del robot
