@@ -181,16 +181,25 @@ class Robot:
         epsilon: int = 10, # degrees
         timeout: timedelta = timedelta(seconds=1.0), #timeout
     ) -> str:
+        log: str = ""
         start_time = time.time()
-        while True:
-            elapsed_time = time.time() - start_time
-            write_log: str = self._write_position(*self.units_to_degrees(*goal_positions))
-            true_positions = self._read_pos()
-            read_log: str = 
-            if epsilon > sum(abs(positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
-                return f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {positions} degrees."
-            if elapsed_time > timeout.total_seconds():
-                return f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {positions} degrees."
+        try:
+            while True:
+                elapsed_time = time.time() - start_time
+                write_log: str = self._write_position(*self.units_to_degrees(*goal_positions))
+                true_positions, read_log: str = self._read_pos()
+                if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
+                    log += f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {true_positions} degrees."
+                    break
+                if elapsed_time > timeout.total_seconds():
+                    log += f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {true_positions} degrees."
+                    break 
+                
+        except:
+            log += f"ERROR: MOVE_TO failed. Robot at position {true_positions} degrees."
+            log += f"Log for write position:\n{write_log}"
+            log += f"Log for read position:\n{read_log}"
+            return log
 
     def _write_position(self, *positions: int) -> str:
         log: str = ""
@@ -230,7 +239,8 @@ class Robot:
 
         return log
 
-    def _read_pos(self) -> List[int]:
+    def _read_pos(self) -> List[int], str:
+        log: str = ""
         # Add present position value to the bulk read parameter storage
         for i in range(self.num_servos):
             dxl_id = self.servos[i].id
@@ -238,13 +248,12 @@ class Robot:
                 dxl_id, self.addr_present_position, 4
             )
             if not dxl_addparam_result:
-                log.error("[ID:%03d] groupBulkRead addparam failed" % dxl_id)
-                quit()
+                log += f"ERROR: [ID:{dxl_id}] groupBulkRead addparam failed\n"
 
         # Read present position
         dxl_comm_result = self.group_bulk_read.txRxPacket()
         if dxl_comm_result != COMM_SUCCESS:
-            log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
+            log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}\n"
 
         # Get present position value
         positions = []
@@ -254,17 +263,19 @@ class Robot:
                 dxl_id, self.addr_present_position, 4
             )
             positions.append(dxl_present_position)
+            log += f"READ: servo id {i} present position is {dxl_present_position}\n"
 
         # Clear bulk read parameter storage
         self.group_bulk_read.clearParam()
+        # log += f"clearing bulk read parameter storage"
 
-        return positions
+        return positions, log
 
     def close(self) -> None:
         self.port_handler.closePort()
 
     def __del__(self, *args, **kwargs) -> None:
-        self.close()
+        self.port_handler.closePort()
 
     @staticmethod
     def degrees_to_units(cls, *degrees: int) -> int:
@@ -352,7 +363,7 @@ def test_servos(
         read()
 
     # Close robot
-    robot.close()
+    del robot
 
     # Plot commanded and true positions
     if matplotlib:
