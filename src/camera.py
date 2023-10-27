@@ -19,20 +19,16 @@ class Camera:
         self.fps = fps
         self.fpo = fpo
         self.device = device
-        self.cap = start_capture()
+        self.cap = self.start_capture()
 
     def start_capture(self):
         log.info(f"Starting video capture at {self.width}x{self.height} {self.fps}fps")
-        return (
-            ffmpeg.input(
+        return ffmpeg.input(
                 self.device,
                 format="video4linux2",
                 video_size=f"{self.width}x{self.height}",
                 framerate=self.fps,
-            )
-            .output("pipe:", format="rawvideo", pix_fmt="rgb24")
-            .run_async(pipe_stdout=True)
-        )
+            ).output("pipe:", format="rawvideo", pix_fmt="rgb24").run_async(pipe_stdout=True)
 
     def image(self) -> np.ndarray:
         raw_image = self.cap.stdout.read(self.width * self.height * 3)
