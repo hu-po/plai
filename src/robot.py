@@ -230,7 +230,7 @@ class Robot:
 
         return log
 
-    def _read_pos(self) -> Tuple(List[int], str):
+    def _read_pos(self) -> Tuple[List[int], str]:
         log: str = ""
         # Add present position value to the bulk read parameter storage
         for i in range(self.num_servos):
