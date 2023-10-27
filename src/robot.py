@@ -95,6 +95,10 @@ The user will now describe a pose, return the name of one of the valid poses.
 """
 
 class Robot:
+
+    # Max for units is 4095, which is 360 degrees
+    degrees_to_units: float = 4095 / 360.0
+
     def __init__(
         self,
         servos: List[Servo] = SERVOS,
@@ -163,31 +167,38 @@ class Robot:
             return "Invalid pose."
 
     def move(self, *args: int) -> List[int]:
-        # The name of the function matters for LLMs, so this
-        # simply maps move to write_pos
-        self._write_pos(*self.units_to_degrees(*args))
+        rstring: str = "MOVE to "
+        # assume integer degree input
+        for arg in args:
+
+
+        self._write_position(*self.units_to_degrees(*args))
         return self.degrees_to_units(self._read_pos())
 
     def move_to(
         self,
-        *args: int,
+        *goal_positions: int,
         epsilon: int = 10, # degrees
         timeout: timedelta = timedelta(seconds=1.0), #timeout
     ) -> str:
         start_time = time.time()
         while True:
             elapsed_time = time.time() - start_time
-            positions = self.move(*args)
-            if epsilon > sum(abs(positions[i] - args[i]) for i in range(len(args))):
+            write_log: str = self._write_position(*self.units_to_degrees(*goal_positions))
+            true_positions = self._read_pos()
+            read_log: str = 
+            if epsilon > sum(abs(positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
                 return f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {positions} degrees."
             if elapsed_time > timeout.total_seconds():
                 return f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {positions} degrees."
 
-    def _write_pos(self, *args: int) -> str:
-        if len(args) != self.num_servos:
-            raise ValueError("Number of positions does not match the number of servos.")
+    def _write_position(self, *positions: int) -> str:
+        log: str = ""
+        if len(positions) != self.num_servos:
+            positions = positions[:self.num_servos]
+            log += f"ERROR: Number of positions {len(positions)} does not match number of servos {self.num_servos}."
         # Enable torque for all servos and add goal position to the bulk write parameter storage
-        for i, pos in enumerate(args):
+        for i, pos in enumerate(positions):
             dxl_id = self.servos[i].id
             clipped = min(max(pos, self.servos[i].range[0]), self.servos[i].range[1])
 
@@ -195,9 +206,9 @@ class Robot:
                 self.port_handler, dxl_id, self.addr_torque_enable, self.torque_enable
             )
             if dxl_comm_result != COMM_SUCCESS:
-                log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
+                log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
             elif dxl_error != 0:
-                log.error("%s" % self.packet_handler.getRxPacketError(dxl_error))
+                log += f"ERROR: {self.packet_handler.getRxPacketError(dxl_error)}"
 
             self.group_bulk_write.addParam(
                 dxl_id, self.addr_goal_position, 4, [
@@ -206,15 +217,18 @@ class Robot:
                 DXL_LOBYTE(DXL_HIWORD(clipped)),
                 DXL_HIBYTE(DXL_HIWORD(clipped)),
             ])
-            return "WRITE position to servo {dxl_id}: {pos} or {self.units_to_degrees(pos)}deg"
+            log += f"WROTE: set position to {pos} degrees on servo id {i}"
 
         # Write goal position
         dxl_comm_result = self.group_bulk_write.txPacket()
         if dxl_comm_result != COMM_SUCCESS:
-            log.error("%s" % self.packet_handler.getTxRxResult(dxl_comm_result))
+            log += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
 
         # Clear bulk write parameter storage
         self.group_bulk_write.clearParam()
+        # log += f"clearing bulk write parameter storage"
+
+        return log
 
     def _read_pos(self) -> List[int]:
         # Add present position value to the bulk read parameter storage
@@ -253,28 +267,14 @@ class Robot:
         self.close()
 
     @staticmethod
-    def degrees_to_units(
-        degrees: Union[int, List[int]],
-        conversion_factor: float = 11.375
-    ) -> Union[int, List[int]]:
-        if isinstance(degrees, list):
-            positions = [int(degree * conversion_factor) for degree in degrees]
-            return positions
-        else:
-            position = int(degrees * conversion_factor)
-            return position
+    def degrees_to_units(cls, *degrees: int) -> int:
+        for degree in degrees:
+            yield int(degree * cls.degrees_to_units)
 
     @staticmethod
-    def units_to_degrees(
-        position: Union[int, List[int]],
-        conversion_factor: float = 0.088
-    ) -> Union[float, List[float]]:
-        if isinstance(position, list):
-            degrees = [float(pos) * conversion_factor for pos in position]
-            return degrees
-        else:
-            degrees = float(position) * conversion_factor
-            return degrees
+    def units_to_degrees(cls, *positions: int) -> int:
+        for pos in positions:
+            yield int(pos / cls.degrees_to_units)
 
 
 def test_servos(
@@ -313,7 +313,7 @@ def test_servos(
     _degrees: List[int] = robot.units_to_degrees(_position)
     log.debug(f"WRITE to: {_position} or {_degrees}")
     read()
-    robot._write_pos(*_position)
+    robot._write_position(*_position)
     read()
     commanded_positions.append(_position)
     commanded_timestamps.append(datetime.datetime.now())
