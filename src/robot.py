@@ -324,7 +324,7 @@ def test_servos(
 
         robot.move(step)
         commanded_positions.append(step)
-        commanded_timestamps.append(datetime.datetime.now())
+        commanded_timestamps.append(datetime.now())
         time.sleep(1)
 
     # Close robot
