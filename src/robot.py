@@ -1,9 +1,8 @@
 import logging
 import time
-import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 from dataclasses import dataclass
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List, Tuple
 
 from dynamixel_sdk import (
     PortHandler,
@@ -18,10 +17,11 @@ from dynamixel_sdk import (
 )
 
 log = logging.getLogger(__name__)
+log.basicConfig(level=logging.DEBUG)
 
-
-from typing import List, Tuple, Dict
-from dataclasses import dataclass
+ROBOT_TOKEN: str = "🤖"
+SERVO_TOKEN: str = "🦾"
+CAMERA_TOKEN: str = "📷"
 
 @dataclass
 class Servo:
@@ -49,10 +49,10 @@ POSES: Dict[str, Pose] = {
     'down': Pose([180, 94, 180], "looking down, facing forward")
 }
 
-ROBOT_DESCRIPTION: str = """
-You are an llm control unit for a robot arm.
-This arm has with 3 servos forming a kinematic chain.
-The Servo dataclass holds information for each servo:
+ROBOT_DESCRIPTION: str = f"""
+You are an llm control unit for a robot arm called {ROBOT_TOKEN}.
+{ROBOT_TOKEN} has with servos {SERVO_TOKEN} forming a kinematic chain.
+The Servo dataclass holds information for each {SERVO_TOKEN}:
 
 @dataclass
 class Servo:
@@ -61,7 +61,8 @@ class Servo:
     range: Tuple[int, int] # (min, max) position values for servos (0, 4095)
     desc: str # description of servo for llm use
 
-The robot arm can be put into different poses.
+{ROBOT_TOKEN} can be put into different poses.
+Each pose contains angles in degrees for each {SERVO_TOKEN}.
 The Pose dataclass holds information for each pose:
 
 @dataclass
@@ -69,8 +70,19 @@ class Pose:
     angles: List[int] # list of int angles in degrees (0, 360)
     desc: str # description of position for llm use
 
-The robot arm you currently control has the following specifications
-SERVOS: List[Servo] = [
+{ROBOT_TOKEN} can take images with a camera {CAMERA_TOKEN}.
+The Camera dataclass holds information for {CAMERA_TOKEN}:
+
+@dataclass
+class Camera:
+    id: int # id for camera
+    name: str # name of camera for llm use
+    width: int # width of image in pixels
+    height: int # height of image in pixels
+    desc: str # description of camera for llm use
+
+{ROBOT_TOKEN} has the following components
+{SERVO_TOKEN}: List[Servo] = [
     Servo(1, "roll", (1761, 2499), "rolls the neck left and right rotating the view, roll"),
     Servo(2, "tilt", (979, 2223), "tilts the head up and down vertically, pitch"),
     Servo(3, "pan", (988, 3007), "pans the head side to side horizontally, yaw")
@@ -94,10 +106,19 @@ Here are some examples of user descriptions and correct pose choices:
 The user will now describe a pose, return the name of one of the valid poses.
 """
 
-class Robot:
+# Convert servo units into degrees for readability
+# Max for units is 4095, which is 360 degrees
+DEGREE_TO_UNIT: float = 4095 / 360.0
 
-    # Max for units is 4095, which is 360 degrees
-    degrees_to_units: float = 4095 / 360.0
+def degrees_to_units(*degrees: int) -> int:
+    for degree in degrees:
+        yield int(degree * DEGREE_TO_UNIT)
+
+def units_to_degrees(*positions: int) -> int:
+    for pos in positions:
+        yield int(pos / DEGREE_TO_UNIT)
+
+class Robot:
 
     def __init__(
         self,
@@ -177,8 +198,9 @@ class Robot:
         try:
             while True:
                 elapsed_time = time.time() - start_time
-                write_log: str = self._write_position(*self.units_to_degrees(*goal_positions))
+                write_log: str = self._write_position(*goal_positions)
                 true_positions, read_log = self._read_pos()
+                log += f"{ROBOT_TOKEN} at position "
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
                     log += f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {true_positions} degrees."
                     break
@@ -199,6 +221,7 @@ class Robot:
             log += f"ERROR: Number of positions {len(positions)} does not match number of servos {self.num_servos}."
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(positions):
+            pos = units_to_degrees(pos)
             dxl_id = self.servos[i].id
             clipped = min(max(pos, self.servos[i].range[0]), self.servos[i].range[1])
 
@@ -264,16 +287,6 @@ class Robot:
 
     def __del__(self, *args, **kwargs) -> None:
         self.port_handler.closePort()
-
-    @staticmethod
-    def degrees_to_units(cls, *degrees: int) -> int:
-        for degree in degrees:
-            yield int(degree * cls.degrees_to_units)
-
-    @staticmethod
-    def units_to_degrees(cls, *positions: int) -> int:
-        for pos in positions:
-            yield int(pos / cls.degrees_to_units)
 
 
 def test_servos(
