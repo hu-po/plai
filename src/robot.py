@@ -227,7 +227,7 @@ class Robot:
         msg: str = ""
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(positions):
-            pos = units_to_degrees(pos)
+            pos = degrees_to_units(pos)
             dxl_id = self.servos[i].id
             clipped = min(max(pos, self.servos[i].range[0]), self.servos[i].range[1])
 
@@ -283,7 +283,7 @@ class Robot:
             dxl_present_position = self.group_bulk_read.getData(
                 dxl_id, self.addr_present_position, 4
             )
-            positions.append(dxl_present_position)
+            positions.append(units_to_degrees(dxl_present_position))
 
         # Clear bulk read parameter storage
         self.group_bulk_read.clearParam()
