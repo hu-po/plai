@@ -195,13 +195,13 @@ class Robot:
         log.debug(f"Desired pose: {desired_pose}")
         if desired_pose in self.poses:
             log.debug(f"Moving to pose: {desired_pose}")
-            return self.move(*self.poses[desired_pose].angles)
+            return self.move(self.poses[desired_pose].angles)
         else:
             return "Invalid pose."
 
     def move(
         self,
-        *goal_positions: int,
+        goal_positions: List[int],
         epsilon: int = 10, # degrees
         timeout: timedelta = timedelta(seconds=1.0), #timeout
     ) -> str:
@@ -210,8 +210,8 @@ class Robot:
         try:
             while True:
                 elapsed_time = time.time() - start_time
-                log += f"{ROBOT_TOKEN} commanded to position {list(goal_positions)}"
-                write_log: str = self._write_position(*goal_positions)
+                log += f"{ROBOT_TOKEN} commanded to position {goal_positions}"
+                write_log: str = self._write_position(goal_positions)
                 true_positions, read_log = self._read_pos()
                 log += f"{ROBOT_TOKEN} at position {true_positions}"
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
@@ -227,7 +227,7 @@ class Robot:
             log += f"Log for read position:\n{read_log}"
             return log
 
-    def _write_position(self, *positions: int) -> str:
+    def _write_position(self, positions: List[int]) -> str:
         log: str = ""
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(positions):
@@ -324,7 +324,7 @@ def test_servos(
         [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
 
-        robot.move(*step)
+        robot.move(step)
         commanded_positions.append(step)
         commanded_timestamps.append(datetime.datetime.now())
         time.sleep(1)
