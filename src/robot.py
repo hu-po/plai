@@ -318,7 +318,8 @@ def test_servos(
         [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
 
-        robot.move(step)
+        msg = robot.move(step)
+        print(msg)
         commanded_positions.append(step)
         commanded_timestamps.append(datetime.now())
         time.sleep(2)
