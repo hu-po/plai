@@ -214,14 +214,14 @@ class Robot:
                 true_positions, read_log = self._read_pos()
                 log += f"{ROBOT_TOKEN} at position "
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
-                    log += f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {true_positions} degrees."
+                    log += f"MOVE succeeded in {elapsed_time} seconds."
                     break
                 if elapsed_time > timeout.total_seconds():
-                    log += f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {true_positions} degrees."
+                    log += f"MOVE timed out after {elapsed_time} seconds."
                     break 
                 
         except:
-            log += f"ERROR: MOVE_TO failed. Robot at position {true_positions} degrees."
+            log += f"ERROR: MOVE failed."
             log += f"Log for write position:\n{write_log}"
             log += f"Log for read position:\n{read_log}"
             return log
