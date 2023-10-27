@@ -210,9 +210,10 @@ class Robot:
         try:
             while True:
                 elapsed_time = time.time() - start_time
+                log += f"{ROBOT_TOKEN} commanded to position {list(goal_positions)}"
                 write_log: str = self._write_position(*goal_positions)
                 true_positions, read_log = self._read_pos()
-                log += f"{ROBOT_TOKEN} at position "
+                log += f"{ROBOT_TOKEN} at position {true_positions}"
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
                     log += f"MOVE succeeded in {elapsed_time} seconds."
                     break
@@ -228,9 +229,6 @@ class Robot:
 
     def _write_position(self, *positions: int) -> str:
         log: str = ""
-        if len(positions) != self.num_servos:
-            positions = positions[:self.num_servos]
-            log += f"ERROR: Number of positions {len(positions)} does not match number of servos {self.num_servos}."
         # Enable torque for all servos and add goal position to the bulk write parameter storage
         for i, pos in enumerate(positions):
             pos = units_to_degrees(pos)
