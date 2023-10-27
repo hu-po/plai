@@ -320,19 +320,6 @@ def test_servos(
     commanded_timestamps = []
     true_timestamps = []
 
-    log.debug(f"Testing write_pos and read_pos")
-    _position: List[int] = [
-        int((robot.servos[0].range[0] + robot.servos[0].range[1]) / 2),
-        int((robot.servos[1].range[0] + robot.servos[1].range[1]) / 2),
-        int((robot.servos[2].range[0] + robot.servos[2].range[1]) / 2),
-    ]
-    _degrees: List[int] = robot.units_to_degrees(_position)
-    log.debug(f"WRITE to: {_position} or {_degrees}")
-    robot._write_position(*_position)
-    commanded_positions.append(_position)
-    commanded_timestamps.append(datetime.datetime.now())
-    time.sleep(0.1)
-
     log.debug(f"Testing move")
     for step in [
         [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
