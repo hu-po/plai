@@ -280,7 +280,7 @@ class Robot:
 def move_with_prompt(
     robot: Robot,
     llm_func: callable,
-    raw_move_str: int = "home",
+    raw_move_str: int,
     system_msg: str = SYSTEM_PROMPT,
     move_msg: str = MOVE_MSG,
 ) -> str:
@@ -314,13 +314,14 @@ def test_servos_llm() -> None:
     log.setLevel(logging.DEBUG)
     log.debug("Testing move with prompt")
     robot = Robot()
+    from .gpt import gpt_text
     for raw_move_str in [
         "go to the home position",
         "check on your left",
         "bogie on your right",
         "what is on the floor",
     ]:
-        msg = move_with_prompt(robot, raw_move_str=raw_move_str)
+        msg = move_with_prompt(robot, gpt_text, raw_move_str)
         print(msg)
         time.sleep(1)
     del robot
