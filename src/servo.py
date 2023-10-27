@@ -20,6 +20,9 @@ from dynamixel_sdk import (
 log = logging.getLogger(__name__)
 
 
+from typing import List, Tuple, Dict
+from dataclasses import dataclass
+
 @dataclass
 class Servo:
     id: int # dynamixel id for servo
@@ -38,12 +41,12 @@ class Pose:
     angles: List[int] # list of int angles in degrees (0, 360)
     desc: str # description of position for llm use
 
-POSES: Dict[str : Pose] = {
-    'home' : Pose([180, 211, 180], "home position or look up"),
-    'forward' : Pose([180, 140, 180], "look ahead, facing forward"),
-    'tilt left' : Pose([215, 130, 151], "looking forward, head tilted right"),
-    'tilt right' : Pose([145, 130, 209], "looking forward, head tilted left"),
-    'down' : Pose([180, 94, 180], "looking down, facing forward")
+POSES: Dict[str, Pose] = {
+    'home': Pose([180, 211, 180], "home position or look up"),
+    'forward': Pose([180, 140, 180], "look ahead, facing forward"),
+    'tilt left': Pose([215, 130, 151], "looking forward, head tilted right"),
+    'tilt right': Pose([145, 130, 209], "looking forward, head tilted left"),
+    'down': Pose([180, 94, 180], "looking down, facing forward")
 }
 
 ROBOT_DESCRIPTION: str = """
@@ -180,7 +183,8 @@ class Servos:
             if elapsed_time > timeout.total_seconds():
                 return f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {positions} degrees."
 
-    def _write_pos(self, *args: int) -> None:
+    def _write_pos(self, *args: int) -> str:
+        return_str: = ""
         if len(args) != self.num_servos:
             raise ValueError("Number of positions does not match the number of servos.")
         # Enable torque for all servos and add goal position to the bulk write parameter storage
@@ -203,7 +207,7 @@ class Servos:
                 DXL_LOBYTE(DXL_HIWORD(clipped)),
                 DXL_HIBYTE(DXL_HIWORD(clipped)),
             ])
-            log.debug(f"WRITE position to servo {dxl_id}: {pos} or {self.units_to_degrees(pos)}deg")
+            return "WRITE position to servo {dxl_id}: {pos} or {self.units_to_degrees(pos)}deg"
 
         # Write goal position
         dxl_comm_result = self.group_bulk_write.txPacket()
