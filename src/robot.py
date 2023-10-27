@@ -316,9 +316,7 @@ def test_servos(
 
     # Initialize lists to store commanded and true positions
     commanded_positions = []
-    true_positions = []
     commanded_timestamps = []
-    true_timestamps = []
 
     log.debug(f"Testing move")
     for step in [
@@ -342,7 +340,6 @@ def test_servos(
 
         plt.figure()
         plt.plot(commanded_timestamps, commanded_positions, label="Commanded Positions")
-        plt.plot(true_timestamps, true_positions, label="True Positions")
         plt.xlabel("Time")
         plt.ylabel("Positions")
         plt.legend()
