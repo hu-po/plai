@@ -17,11 +17,11 @@ from dynamixel_sdk import (
 )
 
 log = logging.getLogger(__name__)
-log.basicConfig(level=logging.DEBUG)
-
+log.setLevel(logging.DEBUG)
 ROBOT_TOKEN: str = "🤖"
 SERVO_TOKEN: str = "🦾"
 CAMERA_TOKEN: str = "📷"
+POSE_TOKEN: str = "🤸"
 
 @dataclass
 class Servo:
@@ -38,15 +38,16 @@ SERVOS: List[Servo] = [
 
 @dataclass
 class Pose:
+    name: str # name of pose for llm use
     angles: List[int] # list of int angles in degrees (0, 360)
     desc: str # description of position for llm use
 
 POSES: Dict[str, Pose] = {
-    'home': Pose([180, 211, 180], "home position or look up"),
-    'forward': Pose([180, 140, 180], "look ahead, facing forward"),
-    'tilt left': Pose([215, 130, 151], "looking forward, head tilted right"),
-    'tilt right': Pose([145, 130, 209], "looking forward, head tilted left"),
-    'down': Pose([180, 94, 180], "looking down, facing forward")
+    "home" : Pose("home", [180, 211, 180], "home position or look up"),
+    "forward" : Pose("forward", [180, 140, 180], "look ahead, facing forward"),
+    "tilt left" : Pose("tilt left", [215, 130, 151], "looking forward, head tilted right"),
+    "tilt right" : Pose("tilt right", [145, 130, 209], "looking forward, head tilted left"),
+    "down": Pose("down", [180, 94, 180], "looking down, facing forward")
 }
 
 ROBOT_DESCRIPTION: str = f"""
@@ -61,12 +62,13 @@ class Servo:
     range: Tuple[int, int] # (min, max) position values for servos (0, 4095)
     desc: str # description of servo for llm use
 
-{ROBOT_TOKEN} can be put into different poses.
+{ROBOT_TOKEN} can be put into different poses {POSE_TOKEN}.
 Each pose contains angles in degrees for each {SERVO_TOKEN}.
 The Pose dataclass holds information for each pose:
 
 @dataclass
 class Pose:
+    name: str # name of pose for llm use
     angles: List[int] # list of int angles in degrees (0, 360)
     desc: str # description of position for llm use
 
@@ -87,19 +89,29 @@ class Camera:
     Servo(2, "tilt", (979, 2223), "tilts the head up and down vertically, pitch"),
     Servo(3, "pan", (988, 3007), "pans the head side to side horizontally, yaw")
 ]
-POSES: Dict[str : Pose] = {
-    'home' : Pose([180, 211, 180], "home position or look up"),
-    'forward' : Pose([180, 140, 180], "look ahead, facing forward"),
-    'tilt left' : Pose([215, 130, 151], "looking forward, head tilted right"),
-    'tilt right' : Pose([145, 130, 209], "looking forward, head tilted left"),
-    'down' : Pose([180, 94, 180], "looking down, facing forward")
-}
+POSES: List[Pose] = [
+    Pose("home", [180, 211, 180], "home position or look up"),
+    Pose("forward", [180, 140, 180], "look ahead, facing forward"),
+    Pose("tilt left", [215, 130, 151], "looking forward, head tilted right"),
+    Pose("tilt right", [145, 130, 209], "looking forward, head tilted left"),
+    Pose("down", [180, 94, 180], "looking down, facing forward")
+]
 """
 
-MOVE_DESCRIPTION: str = """
-Choose one of the valid poses given a user description.
-The name of the pose must match the name of one of the pose in the POSES dict.
-Here are some examples of user descriptions and correct pose choices:
+ACTION_DESCRIPTION: str = f"""
+The user will describe in natural language a command.
+Format the command so that {ROBOT_TOKEN} can understand it.
+{ROBOT_TOKEN} will then execute the command.
+{ROBOT_TOKEN} can accept the following commands:
+   - {SERVO_TOKEN}: move to a specific pose based on description
+   - {CAMERA_TOKEN}: take a picture with the camera
+"""
+
+MOVE_DESCRIPTION: str = f"""
+{ROBOT_TOKEN} is going to {SERVO_TOKEN}.
+Based on the user description, choose a pose from the following list [{", ".join(POSES.keys())}].
+You must return an exact match to name of one of the poses.
+
 "go to the home position" -> "home"
 "face the forward direction" -> "forward"
 "look down" -> "down"
