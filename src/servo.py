@@ -184,7 +184,6 @@ class Servos:
                 return f"MOVE_TO to timed out after {elapsed_time} seconds. Robot at position {positions} degrees."
 
     def _write_pos(self, *args: int) -> str:
-        return_str: = ""
         if len(args) != self.num_servos:
             raise ValueError("Number of positions does not match the number of servos.")
         # Enable torque for all servos and add goal position to the bulk write parameter storage
