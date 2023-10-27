@@ -201,22 +201,22 @@ class Robot:
         self,
         goal_positions: List[int],
         epsilon: int = 10, # degrees
-        timeout: timedelta = timedelta(seconds=1.0), #timeout
+        timeout: timedelta = timedelta(seconds=1), #timeout
     ) -> str:
         msg: str = ""
         start_time = time.time()
         try:
             while True:
                 elapsed_time = time.time() - start_time
-                msg += f"{ROBOT_TOKEN} commanded to position {goal_positions}"
+                msg += f"{ROBOT_TOKEN} commanded to position {goal_positions}\n"
                 self._write_position(goal_positions)
                 true_positions = self._read_pos()
-                msg += f"{ROBOT_TOKEN} at position {true_positions}"
+                msg += f"{ROBOT_TOKEN} at position {true_positions}\n"
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
-                    msg += f"MOVE succeeded in {elapsed_time} seconds."
+                    msg += f"MOVE succeeded in {elapsed_time} seconds.\n"
                     break
                 if elapsed_time > timeout.total_seconds():
-                    msg += f"MOVE timed out after {elapsed_time} seconds."
+                    msg += f"MOVE timed out after {elapsed_time} seconds.\n"
                     break 
         except Exception as e:
             msg += f"MOVE failed with exception {e}"
@@ -236,6 +236,7 @@ class Robot:
             )
             if dxl_comm_result != COMM_SUCCESS:
                 msg += f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}"
+                raise Exception(msg)
             elif dxl_error != 0:
                 msg += f"ERROR: {self.packet_handler.getRxPacketError(dxl_error)}"
                 raise Exception(msg)
@@ -244,7 +245,7 @@ class Robot:
                 dxl_id, self.addr_goal_position, 4, [
                 DXL_LOBYTE(DXL_LOWORD(clipped)),
                 DXL_HIBYTE(DXL_LOWORD(clipped)),
-                DXL_LOBYTE(DXL_HIWORD(clipped)),
+                DXL_LOBYTE(DXL_HIWORD(clipped)), 
                 DXL_HIBYTE(DXL_HIWORD(clipped)),
             ])
 
