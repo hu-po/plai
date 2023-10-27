@@ -289,10 +289,20 @@ class Robot:
         self.group_bulk_read.clearParam()
 
         return positions
+    
+    def _disable_torque(self) -> None:
+        for servo in self.servos:
+            dxl_comm_result, dxl_error = self.packet_handler.write1ByteTxRx(
+                self.port_handler, servo.id, self.addr_torque_enable, self.torque_disable
+            )
+            if dxl_comm_result != COMM_SUCCESS:
+                log.error(f"ERROR: {self.packet_handler.getTxRxResult(dxl_comm_result)}")
+            elif dxl_error != 0:
+                log.error(f"ERROR: {self.packet_handler.getRxPacketError(dxl_error)}")
 
     def __del__(self, *args, **kwargs) -> None:
-        # Move to home position
         self.move(self.poses["home"].angles)
+        self._disable_torque
         self.port_handler.closePort()
 
 
