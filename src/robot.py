@@ -42,8 +42,7 @@ SERVOS: List[Servo] = [
 ]
 
 SERVOS_MSG: str = f"""
-{ROBOT_TOKEN} has {len(SERVOS)} servos {SERVO_TOKEN} forming a kinematic chain.
-The Servo dataclass holds information for each {SERVO_TOKEN} in {ROBOT_TOKEN}:
+{ROBOT_TOKEN} has {len(SERVOS)} servos {SERVO_TOKEN} forming a kinematic chain
 @dataclass
 class Servo:
     id: int # dynamixel id for servo
@@ -68,9 +67,8 @@ POSES: Dict[str, Pose] = {
 }
 
 POSES_MSG: str = f"""
-{ROBOT_TOKEN} can be put into different poses {POSE_TOKEN}.
-Each {POSE_TOKEN} contains angles in degrees for each {SERVO_TOKEN}.
-The Pose dataclass holds information for each {POSE_TOKEN}:
+{ROBOT_TOKEN} can be put into {len(POSES)} different poses {POSE_TOKEN}
+Each {POSE_TOKEN} contains angles in degrees for each {SERVO_TOKEN}
 @dataclass
 class Pose:
     name: str # name of pose for llm use
@@ -101,8 +99,7 @@ CAMERAS: List[Camera] = [
 ]
 
 CAMERA_MSG: str = f"""
-{ROBOT_TOKEN} can take images with a camera {CAMERA_TOKEN}.
-The Camera dataclass holds information for {CAMERA_TOKEN}:
+{ROBOT_TOKEN} has {len(CAMERAS)} different cameras {CAMERA_TOKEN}.
 @dataclass
 class Camera:
     id: int # id for camera
@@ -277,7 +274,7 @@ class Robot:
 
     def __del__(self, *args, **kwargs) -> None:
         self.move(self.poses["home"].angles)
-        self._disable_torque
+        self._disable_torque()
         self.port_handler.closePort()
 
 def move_with_prompt(
@@ -288,19 +285,19 @@ def move_with_prompt(
     move_msg: str = MOVE_MSG,
 ) -> str:
     msg: str = ""
-    desired_pose = llm_func(
+    desired_pose_name = llm_func(
             max_tokens=8,
             messages=[
                 {"role": "system", "content": f"{system_msg}\n{move_msg}"},
                 {"role": "user", "content": raw_move_str},
             ]
     )
-    msg += f"{MOVE_TOKEN} commanded pose is {desired_pose}\n"
-    desired_pose = POSES.get(desired_pose, None)
+    msg += f"{MOVE_TOKEN} commanded pose is {desired_pose_name}\n"
+    desired_pose = POSES.get(desired_pose_name, None)
     if desired_pose is not None:
-        return robot.move(POSES[desired_pose].angles)
+        return robot.move(desired_pose.angles)
     else:
-        msg += f"ERROR: {desired_pose} is not a valid pose.\n"
+        msg += f"ERROR: {desired_pose_name} is not a valid pose.\n"
         return msg
 
 def test_servos() -> None:
