@@ -162,20 +162,11 @@ class Robot:
         log.debug(f"Desired pose: {desired_pose}")
         if desired_pose in self.poses:
             log.debug(f"Moving to pose: {desired_pose}")
-            return self.move_to(*self.poses[desired_pose].angles)
+            return self.move(*self.poses[desired_pose].angles)
         else:
             return "Invalid pose."
 
-    def move(self, *args: int) -> List[int]:
-        rstring: str = "MOVE to "
-        # assume integer degree input
-        for arg in args:
-
-
-        self._write_position(*self.units_to_degrees(*args))
-        return self.degrees_to_units(self._read_pos())
-
-    def move_to(
+    def move(
         self,
         *goal_positions: int,
         epsilon: int = 10, # degrees
@@ -187,7 +178,7 @@ class Robot:
             while True:
                 elapsed_time = time.time() - start_time
                 write_log: str = self._write_position(*self.units_to_degrees(*goal_positions))
-                true_positions, read_log: str = self._read_pos()
+                true_positions, read_log = self._read_pos()
                 if epsilon > sum(abs(true_positions[i] - goal_positions[i]) for i in range(len(goal_positions))):
                     log += f"MOVE_TO succeeded in {elapsed_time} seconds. Robot at position {true_positions} degrees."
                     break
@@ -239,7 +230,7 @@ class Robot:
 
         return log
 
-    def _read_pos(self) -> List[int], str:
+    def _read_pos(self) -> Tuple(List[int], str):
         log: str = ""
         # Add present position value to the bulk read parameter storage
         for i in range(self.num_servos):
@@ -270,9 +261,6 @@ class Robot:
         # log += f"clearing bulk read parameter storage"
 
         return positions, log
-
-    def close(self) -> None:
-        self.port_handler.closePort()
 
     def __del__(self, *args, **kwargs) -> None:
         self.port_handler.closePort()
@@ -307,14 +295,6 @@ def test_servos(
     commanded_timestamps = []
     true_timestamps = []
 
-    # Read positions for tests
-    def read():
-        _position = robot._read_pos()
-        true_positions.append(_position)
-        true_timestamps.append(datetime.datetime.now())
-        _degrees = robot.units_to_degrees(_position)
-        log.debug(f"READ position: {_position} or {_degrees}")
-
     log.debug(f"Testing write_pos and read_pos")
     _position: List[int] = [
         int((robot.servos[0].range[0] + robot.servos[0].range[1]) / 2),
@@ -323,13 +303,10 @@ def test_servos(
     ]
     _degrees: List[int] = robot.units_to_degrees(_position)
     log.debug(f"WRITE to: {_position} or {_degrees}")
-    read()
     robot._write_position(*_position)
-    read()
     commanded_positions.append(_position)
     commanded_timestamps.append(datetime.datetime.now())
     time.sleep(0.1)
-    read()
 
     log.debug(f"Testing move")
     for step in [
@@ -338,29 +315,11 @@ def test_servos(
         [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
         [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
     ]:
-        read()
+
         robot.move(*step)
         commanded_positions.append(step)
         commanded_timestamps.append(datetime.datetime.now())
-        read()
         time.sleep(1)
-        read()
-
-    log.debug(f"Testing move_to")
-    for step in [
-        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
-        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
-        [robot.servos[0].range[0], robot.servos[1].range[0], robot.servos[2].range[0]],
-        [robot.servos[0].range[1], robot.servos[1].range[1], robot.servos[2].range[1]],
-    ]:
-        read()
-        robot.move_to(*step)
-        commanded_positions.append(step)
-        commanded_timestamps.append(datetime.datetime.now())
-        read()
-        read()
-        time.sleep(1)
-        read()
 
     # Close robot
     del robot
