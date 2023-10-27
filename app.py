@@ -3,7 +3,7 @@ import subprocess
 import sys
 
 import gradio as gr
-from src.servo import Servos
+from src.servo import Robot
 from src.camera import Camera
 from src.plan import Plan, plan_from_description
 
@@ -19,7 +19,7 @@ def remote_chromium_gradio_ui(
 # ----- Servos
 
 def move(servo1, servo2, servo3):
-    servos = Servos()
+    servos = Robot()
     servos.move(*servos.degrees_to_units([servo1, servo2, servo3]))
     degrees = [servos.units_to_degrees(position) for position in servos._read_pos()]
     return f"Servo 1: {degrees[0]} degrees, Servo 2: {degrees[1]} degrees, Servo 3: {degrees[2]} degrees"
