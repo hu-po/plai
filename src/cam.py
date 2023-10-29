@@ -4,8 +4,8 @@ from ffmpeg.asyncio import FFmpeg
 
 
 async def send_video(
-    local_path: str = "/home/pi/dev/data/pi.stereo.mp4",
-    remote_path: str = "/home/oop/dev/data/pi.stereo.mp4",
+    local_path: str,
+    remote_path: str,
     username: str = "oop",
     remote_ip: str = "192.168.1.44",
 ) -> str:
@@ -23,12 +23,11 @@ async def send_video(
 
 
 async def record_video(
-    output_path: str = "/home/pi/dev/data/pi.stereo.mp4",
-    width: int = 960,
-    height: int = 1080,
-    fps: int = 1,
-    max_frames: int = 3,
-    video_device: str = "/dev/video0",
+    output_path: str,
+    width: int,
+    height: int,
+    fps: int,
+    video_device: str,
 ) -> str:
     ffmpeg = (
         FFmpeg()
@@ -36,21 +35,44 @@ async def record_video(
         .input(
             video_device, format="v4l2", framerate=fps, video_size=f"{width}x{height}"
         )
-        .output(output_path, vcodec="copy")
+        .output(output_path, vcodec="h264")
     )
 
-    @ffmpeg.on("progress")
-    def time_to_terminate(progress: Progress):
-        if progress.frame > max_frames:
-            ffmpeg.terminate()
+    stdout, stderr = await ffmpeg.execute()
 
-    await ffmpeg.execute()
-    return f"Recording completed and saved to {output_path}"
+    if stderr:
+        return f"Recording failed with error: {stderr.decode()}"
+    else:
+        return f"Recording completed and saved to {output_path}"
 
 
 if __name__ == "__main__":
-    result_recording = asyncio.run(record_video())
-    print(result_recording)
+    # Test case for stereo camera
+    result_recording_stereo = asyncio.run(record_video(
+        output_path="/home/pi/dev/data/pi.stereo.mp4",
+        width=960,
+        height=1080,
+        fps=30,
+        video_device="/dev/video0",
+    ))
+    print(result_recording_stereo)
+    result_sending_stereo = asyncio.run(send_video(
+        local_path="/home/pi/dev/data/pi.stereo.mp4",
+        remote_path="/home/oop/dev/data/pi.stereo.mp4"
+    ))
+    print(result_sending_stereo)
 
-    result_sending = asyncio.run(send_video())
-    print(result_sending)
+    # Test case for mono camera
+    result_recording_mono = asyncio.run(record_video(
+        output_path="/home/pi/dev/data/pi.mono.mp4",
+        width=640,
+        height=480,
+        fps=30,
+        video_device="/dev/video2",
+    ))
+    print(result_recording_mono)
+    result_sending_mono = asyncio.run(send_video(
+        local_path="/home/pi/dev/data/pi.mono.mp4",
+        remote_path="/home/oop/dev/data/pi.mono.mp4"
+    ))
+    print(result_sending_mono)
