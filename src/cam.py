@@ -4,12 +4,12 @@ from ffmpeg.asyncio import FFmpeg
 
 
 async def send_video(
-    filename: str = "output.mp4",
-    remote_ip: str = "192.168.1.2",
-    remote_path: str = "/path/to/destination/",
-    username: str = "default_username",
+    local_path: str = "/home/pi/dev/data/pi.stereo.mp4",
+    remote_path: str = "/home/oop/dev/data/pi.stereo.mp4",
+    username: str = "oop",
+    remote_ip: str = "192.168.1.44",
 ) -> str:
-    cmd = ["scp", filename, f"{username}@{remote_ip}:{remote_path}"]
+    cmd = ["scp", local_path, f"{username}@{remote_ip}:{remote_path}"]
     process = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
@@ -19,16 +19,15 @@ async def send_video(
     if process.returncode != 0:
         return f"SCP command failed with error: {stderr.decode()}"
     else:
-        return f"Successfully sent {filename} to {remote_ip}:{remote_path}"
+        return f"Successfully sent {local_path} to {remote_ip}:{remote_path}"
 
 
 async def record_video(
-    width: int = 1920,
+    output_path: str = "/home/pi/dev/data/pi.stereo.mp4",
+    width: int = 960,
     height: int = 1080,
-    fps: int = 30,
-    output_filename: str = "output",
-    extension: str = "mp4",
-    max_frames: int = 500,
+    fps: int = 1,
+    max_frames: int = 3,
     video_device: str = "/dev/video0",
 ) -> str:
     ffmpeg = (
@@ -37,7 +36,7 @@ async def record_video(
         .input(
             video_device, format="v4l2", framerate=fps, video_size=f"{width}x{height}"
         )
-        .output(f"{output_filename}.{extension}", vcodec="copy")
+        .output(output_path, vcodec="copy")
     )
 
     @ffmpeg.on("progress")
@@ -46,7 +45,7 @@ async def record_video(
             ffmpeg.terminate()
 
     await ffmpeg.execute()
-    return f"Recording completed and saved to {output_filename}.{extension}"
+    return f"Recording completed and saved to {output_path}"
 
 
 if __name__ == "__main__":
