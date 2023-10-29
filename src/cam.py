@@ -1,5 +1,4 @@
 import asyncio
-from ffmpeg import Progress
 from ffmpeg.asyncio import FFmpeg
 
 
@@ -28,10 +27,12 @@ async def record_video(
     height: int,
     fps: int,
     video_device: str,
+    duration: int
 ) -> str:
     ffmpeg = (
         FFmpeg()
         .option("y")
+        .option("t", str(duration))
         .input(
             video_device, format="v4l2", framerate=fps, video_size=f"{width}x{height}"
         )
@@ -52,8 +53,9 @@ if __name__ == "__main__":
         output_path="/home/pi/dev/data/pi.stereo.mp4",
         width=960,
         height=1080,
-        fps=30,
+        fps=5,
         video_device="/dev/video0",
+        duration=2
     ))
     print(result_recording_stereo)
     result_sending_stereo = asyncio.run(send_video(
@@ -67,8 +69,9 @@ if __name__ == "__main__":
         output_path="/home/pi/dev/data/pi.mono.mp4",
         width=640,
         height=480,
-        fps=30,
+        fps=5,
         video_device="/dev/video2",
+        duration=2
     ))
     print(result_recording_mono)
     result_sending_mono = asyncio.run(send_video(
