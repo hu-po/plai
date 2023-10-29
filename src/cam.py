@@ -63,14 +63,19 @@ async def record_video(
     else:
         return f"Recording completed and saved to {output_path}"
 
+async def handle_camera(camera):
+    record_result = await record_video(camera=camera, duration=2)
+    
+    if "error" in record_result.lower():
+        print(f"Error occurred while recording for {camera.name}: {record_result}")
+        return
+
+    send_result = await send_video(output_filename=f"{camera.name}.mp4")
+    if "error" in send_result.lower():
+        print(f"Error occurred while sending video for {camera.name}: {send_result}")
+
 async def run_camera_tasks():
-    tasks = []
-    for camera in CAMERAS:
-        record_task = asyncio.create_task(record_video(camera=camera, duration=2))
-        tasks.append(record_task)
-    for camera in CAMERAS:
-        send_task = asyncio.create_task(send_video())
-        tasks.append(send_task)
+    tasks = [handle_camera(camera) for camera in CAMERAS]
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
