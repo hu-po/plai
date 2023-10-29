@@ -3,12 +3,10 @@ from ffmpeg.asyncio import FFmpeg
 from dataclasses import dataclass
 import os
 
-# Global variables for default values
 USERNAME_DEFAULT = "oop"
 REMOTE_IP_DEFAULT = "192.168.1.44"
-DEFAULT_DURATION = 3  # Default duration set to 3 seconds
+DEFAULT_DURATION = 3
 
-# Global variables for data paths
 ROBOT_DATA_DIR = "/home/pi/dev/data/"
 REMOTE_DATA_DIR = "/home/oop/dev/data/"
 
@@ -20,7 +18,6 @@ class Camera:
     height: int
     desc: str
 
-# Global variable for a list of Camera objects
 CAMERAS = [
     Camera(device="/dev/video0", name="pi.stereo", width=960, height=1080, desc="Stereo Camera"),
     Camera(device="/dev/video2", name="pi.mono", width=640, height=480, desc="Mono Camera"),
@@ -39,9 +36,7 @@ async def send_video(
     process = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-
     stdout, stderr = await process.communicate()
-
     if process.returncode != 0:
         return f"SCP command failed with error: {stderr.decode()}"
     else:
@@ -62,21 +57,21 @@ async def record_video(
         )
         .output(output_path, vcodec="h264")
     )
-
     stdout, stderr = await ffmpeg.execute()
-
     if stderr:
         return f"Recording failed with error: {stderr.decode()}"
     else:
         return f"Recording completed and saved to {output_path}"
 
-if __name__ == "__main__":
-    # Iterate through the camera objects and make AsyncIO calls
+async def run_camera_tasks():
+    tasks = []
     for camera in CAMERAS:
-        result_recording = asyncio.run(record_video(
-            camera=camera,
-            duration=2  # Override default duration for this test case
-        ))
-        print(result_recording)
-        result_sending = asyncio.run(send_video())
-        print(result_sending)
+        record_task = asyncio.create_task(record_video(camera=camera, duration=2))
+        tasks.append(record_task)
+    for camera in CAMERAS:
+        send_task = asyncio.create_task(send_video())
+        tasks.append(send_task)
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(run_camera_tasks())
