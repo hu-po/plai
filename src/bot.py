@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from datetime import timedelta
@@ -250,7 +251,7 @@ class Robot:
         self._disable_torque()
         self.port_handler.closePort()
 
-def move_with_prompt(
+async def move_with_prompt(
     robot: Robot,
     llm_func: callable,
     raw_move_str: int,
@@ -299,10 +300,6 @@ def test_servos_llm() -> None:
         time.sleep(1)
     del robot
 
-def test_camera() -> None:
-    pass
-
 if __name__ == "__main__":
     test_servos()
     test_servos_llm()
-    test_camera()

@@ -98,7 +98,7 @@ async def record_video(
 
 async def take_image(camera: Camera) -> str:
     msg: str = ""
-    output_filename = f"{camera.name}.jpg"
+    output_filename = f"{camera.name}.png"
     output_path = os.path.join(ROBOT_DATA_DIR, output_filename)
     cmd = [
         "ffmpeg", "-y",
