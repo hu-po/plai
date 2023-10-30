@@ -13,6 +13,7 @@ REMOTE_IP = "192.168.1.44"
 VIDEO_DURATION = 3
 VIDEO_FPS = 30
 
+
 @dataclass
 class Camera:
     device: str
@@ -21,10 +22,24 @@ class Camera:
     height: int
     desc: str
 
+
 CAMERAS = [
-    Camera(device="/dev/video0", name="stereo", width=1280, height=480, desc="stereo camera on the face facing forward"),
-    Camera(device="/dev/video2", name="mono", width=640, height=480, desc="monocular camera on the chest facing forward"),
+    Camera(
+        device="/dev/video0",
+        name="stereo",
+        width=1280,
+        height=480,
+        desc="stereo camera on the face facing forward",
+    ),
+    Camera(
+        device="/dev/video2",
+        name="mono",
+        width=640,
+        height=480,
+        desc="monocular camera on the chest facing forward",
+    ),
 ]
+
 
 async def send_file(
     filename: str,
@@ -46,6 +61,7 @@ async def send_file(
     if process.returncode != 0:
         msg += f"ERROR on send: {stderr.decode()}"
     return msg
+
 
 async def record_video(
     camera: Camera,
@@ -79,6 +95,7 @@ async def record_video(
     msg += await send_file(output_filename)
     return msg
 
+
 async def take_image(camera: Camera) -> str:
     msg: str = ""
     output_filename = f"{camera.name}.jpg"
@@ -105,12 +122,16 @@ async def take_image(camera: Camera) -> str:
     msg += await send_file(output_filename)
     return msg
 
+
 async def test_cameras():
     log.setLevel(logging.DEBUG)
     log.debug(f"Testing cameras: {CAMERAS}")
-    video_tasks = [record_video(camera) for camera in CAMERAS]
+    log.debug("Testing take_image")
     image_tasks = [take_image(camera) for camera in CAMERAS]
-    _ = await asyncio.gather([video_tasks, image_tasks], return_exceptions=True)
+    _ = await asyncio.gather(image_tasks, return_exceptions=True)
+    log.debug("Testing record_video")
+    video_tasks = [record_video(camera) for camera in CAMERAS]
+    _ = await asyncio.gather(video_tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":
