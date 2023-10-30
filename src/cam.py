@@ -128,10 +128,10 @@ async def test_cameras():
     log.debug(f"Testing cameras: {CAMERAS}")
     log.debug("Testing take_image")
     image_tasks = [take_image(camera) for camera in CAMERAS]
-    _ = await asyncio.gather(image_tasks, return_exceptions=True)
+    _ = await asyncio.gather(*image_tasks, return_exceptions=True)
     log.debug("Testing record_video")
     video_tasks = [record_video(camera) for camera in CAMERAS]
-    _ = await asyncio.gather(video_tasks, return_exceptions=True)
+    _ = await asyncio.gather(*video_tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":
