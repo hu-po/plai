@@ -110,12 +110,7 @@ async def test_cameras():
     log.debug(f"Testing cameras: {CAMERAS}")
     video_tasks = [record_video(camera) for camera in CAMERAS]
     image_tasks = [take_image(camera) for camera in CAMERAS]
-    results = await asyncio.gather(*(video_tasks + image_tasks), return_exceptions=True)
-    for res in results:
-        if isinstance(res, Exception):
-            print(f"Error: {res}")
-        else:
-            print(res)
+    _ = await asyncio.gather([video_tasks, image_tasks], return_exceptions=True)
 
 
 if __name__ == "__main__":
