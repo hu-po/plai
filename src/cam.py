@@ -1,7 +1,6 @@
 import asyncio
-from ffmpeg.asyncio import FFmpeg
-from dataclasses import dataclass
 import os
+from dataclasses import dataclass
 
 ROBOT_DATA_DIR = "/home/pi/dev/data/"
 REMOTE_DATA_DIR = "/home/oop/dev/data/"
@@ -39,6 +38,7 @@ async def send_file(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     stdout, stderr = await process.communicate()
+    msg += f"Sent {local_path} to {remote_path}\n"
     if process.returncode != 0:
         msg += f"ERROR on sending {stderr.decode()}"
     return msg
@@ -51,22 +51,24 @@ async def record_video(
     msg: str = ""
     output_filename = f"{camera.name}.mp4"
     output_path = os.path.join(ROBOT_DATA_DIR, output_filename)
-    ffmpeg = (
-        FFmpeg()
-        .option("y")
-        .option("t", str(duration))
-        .option("r", str(fps))
-        .option("f", "v4l2")
-        .option("video_size", f"{camera.width}x{camera.height}")
-        .option("c:v", "h264")
-        .input(camera.device)
-        .output(output_path)
+    cmd = [
+        "ffmpeg", "-y",
+        "-t", str(duration),
+        "-r", str(fps),
+        "-f", "v4l2",
+        "-video_size", f"{camera.width}x{camera.height}",
+        "-c:v", "h264",
+        "-i", camera.device,
+        output_path
+    ]
+    process = await asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-    stdout, stderr = await ffmpeg.execute()
+    stdout, stderr = await process.communicate()
     if stderr:
         msg += f"FFmpeg Error: {stderr.decode()}\n"
     msg += f"Recorded {output_filename} of duration {duration} seconds\n"
-    if ffmpeg.returncode != 0:
+    if process.returncode != 0:
         return msg
     msg += await send_file(output_filename)
     return msg
