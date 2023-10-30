@@ -1,6 +1,6 @@
 import logging
 import time
-from datetime import datetime, timedelta
+from datetime import timedelta
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 
@@ -17,7 +17,7 @@ from dynamixel_sdk import (
 )
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 ROBOT_TOKEN: str = "🤖"
 SERVO_TOKEN: str = "🦾"
 CAMERA_TOKEN: str = "📷"
@@ -85,31 +85,6 @@ Format the command so that {ROBOT_TOKEN} can understand it.
 Return the one-word string name of the best matching pose.
 """
 
-@dataclass
-class Camera:
-    id: int
-    name: str
-    width: int
-    height: int
-    desc: str
-
-CAMERAS: List[Camera] = [
-    Camera(0, "head", 1280, 480, "stereo camera located at the head, has left and right"),
-    Camera(1, "chest", 640, 480, "monocular camera located at the chest pointing down"),
-]
-
-CAMERA_MSG: str = f"""
-{ROBOT_TOKEN} has {len(CAMERAS)} different cameras {CAMERA_TOKEN}.
-@dataclass
-class Camera:
-    id: int # id for camera
-    name: str # name of camera for llm use
-    width: int # width of image in pixels
-    height: int # height of image in pixels
-    desc: str # description of camera for llm use
-{CAMERA_TOKEN}: List[Camera] = [{"".join([str(c) for c in CAMERAS])}]
-"""
-
 # Convert servo units into degrees for readability
 # Max for units is 4095, which is 360 degrees
 DEGREE_TO_UNIT: float = 4095 / 360.0
@@ -126,7 +101,6 @@ class Robot:
         self,
         servos: List[Servo] = SERVOS,
         poses: Dict[str, Pose] = POSES,
-        cameras: List[Camera] = CAMERAS,
         protocol_version: float = 2.0,
         baudrate: int = 57600,
         device_name: str = "/dev/ttyUSB0",
@@ -145,7 +119,6 @@ class Robot:
             log.debug(f"description: {servo.desc}")
         self.num_servos: int = len(self.servos)  # Number of servos to control
         self.poses = poses # Dict of Pose objects to control
-        self.cameras = cameras # List of Camera objects to control
 
         # Dynamixel communication parameters
         self.protocol_version = protocol_version  # DYNAMIXEL Protocol version (1.0 or 2.0)
