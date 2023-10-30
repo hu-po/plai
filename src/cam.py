@@ -3,12 +3,11 @@ from ffmpeg.asyncio import FFmpeg
 from dataclasses import dataclass
 import os
 
-USERNAME_DEFAULT = "oop"
-REMOTE_IP_DEFAULT = "192.168.1.44"
-DEFAULT_DURATION = 3
-
 ROBOT_DATA_DIR = "/home/pi/dev/data/"
 REMOTE_DATA_DIR = "/home/oop/dev/data/"
+REMOTE_USERNAME = "oop"
+REMOTE_IP = "192.168.1.44"
+VIDEO_DURATION = 3
 
 @dataclass
 class Camera:
@@ -19,34 +18,36 @@ class Camera:
     desc: str
 
 CAMERAS = [
-    Camera(device="/dev/video0", name="pi.stereo", width=960, height=1080, desc="Stereo Camera"),
-    Camera(device="/dev/video2", name="pi.mono", width=640, height=480, desc="Mono Camera"),
+    Camera(device="/dev/video0", name="stereo", width=960, height=1080, desc="stereo camera on the face facing forward"),
+    Camera(device="/dev/video2", name="mono", width=640, height=480, desc="monocular camera on the chest facing forward"),
 ]
 
-async def send_video(
+async def send_file(
+    filename: str,
     robot_dir_path: str = ROBOT_DATA_DIR,
     remote_dir_path: str = REMOTE_DATA_DIR,
-    output_filename: str = "pi.stereo.mp4",
-    username: str = USERNAME_DEFAULT,
-    remote_ip: str = REMOTE_IP_DEFAULT,
+    username: str = REMOTE_USERNAME,
+    remote_ip: str = REMOTE_IP,
 ) -> str:
-    local_path = os.path.join(robot_dir_path, output_filename)
-    remote_path = os.path.join(remote_dir_path, output_filename)
+    msg: str = ""
+    local_path = os.path.join(robot_dir_path, filename)
+    remote_path = os.path.join(remote_dir_path, filename)
     cmd = ["scp", local_path, f"{username}@{remote_ip}:{remote_path}"]
     process = await asyncio.create_subprocess_exec(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     stdout, stderr = await process.communicate()
     if process.returncode != 0:
-        return f"SCP command failed with error: {stderr.decode()}"
-    else:
-        return f"Successfully sent {local_path} to {remote_ip}:{remote_path}"
+        msg += f"ERROR on sending {stderr.decode()}"
+    return msg
 
 async def record_video(
     camera: Camera,
-    duration: int = DEFAULT_DURATION
+    duration: int = VIDEO_DURATION
 ) -> str:
-    output_path = os.path.join(ROBOT_DATA_DIR, f"{camera.name}.mp4")
+    msg: str = ""
+    output_filename = f"{camera.name}.mp4"
+    output_path = os.path.join(ROBOT_DATA_DIR, output_filename)
     ffmpeg = (
         FFmpeg()
         .option("y")
@@ -58,25 +59,16 @@ async def record_video(
         .output(output_path, vcodec="h264")
     )
     stdout, stderr = await ffmpeg.execute()
+    msg += f"Recorded {output_filename} of duration {duration} seconds\n"
     if stderr:
-        return f"Recording failed with error: {stderr.decode()}"
-    else:
-        return f"Recording completed and saved to {output_path}"
+        msg += f"ERROR when recording {stderr.decode()}"
+        return msg
+    msg += await send_file(output_filename)
+    return msg
 
-async def handle_camera(camera):
-    record_result = await record_video(camera=camera, duration=2)
-    
-    if "error" in record_result.lower():
-        print(f"Error occurred while recording for {camera.name}: {record_result}")
-        return
-
-    send_result = await send_video(output_filename=f"{camera.name}.mp4")
-    if "error" in send_result.lower():
-        print(f"Error occurred while sending video for {camera.name}: {send_result}")
-
-async def run_camera_tasks():
-    tasks = [handle_camera(camera) for camera in CAMERAS]
+async def test_cameras():
+    tasks = [record_video(camera) for camera in CAMERAS]
     await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
-    asyncio.run(run_camera_tasks())
+    asyncio.run(test_cameras())
