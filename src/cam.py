@@ -70,12 +70,37 @@ async def record_video(
         *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
     stdout, stderr = await process.communicate()
-    if stderr:
+    msg += f"Recorded {output_filename} of duration {duration} seconds\n"
+    if process.returncode != 0:
         _msg = f"ERROR on record: {stderr.decode()}"
         log.warning(_msg)
         msg += _msg
-    msg += f"Recorded {output_filename} of duration {duration} seconds\n"
+        return msg
+    msg += await send_file(output_filename)
+    return msg
+
+async def take_image(camera: Camera) -> str:
+    msg: str = ""
+    output_filename = f"{camera.name}.jpg"
+    output_path = os.path.join(ROBOT_DATA_DIR, output_filename)
+    cmd = [
+        "ffmpeg", "-y",
+        "-f", "v4l2",
+        "-video_size", f"{camera.width}x{camera.height}",
+        "-i", camera.device,
+        "-vframes", "1",
+        output_path
+    ]
+    log.debug(f"Running command: {cmd}")
+    process = await asyncio.create_subprocess_exec(
+        *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+    )
+    stdout, stderr = await process.communicate()
+    msg += f"Captured image and saved as {output_filename}\n"
     if process.returncode != 0:
+        _msg = f"ERROR on image capture: {stderr.decode()}"
+        log.warning(_msg)
+        msg += _msg
         return msg
     msg += await send_file(output_filename)
     return msg
@@ -83,13 +108,15 @@ async def record_video(
 async def test_cameras():
     log.setLevel(logging.DEBUG)
     log.debug(f"Testing cameras: {CAMERAS}")
-    tasks = [record_video(camera) for camera in CAMERAS]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    video_tasks = [record_video(camera) for camera in CAMERAS]
+    image_tasks = [take_image(camera) for camera in CAMERAS]
+    results = await asyncio.gather(*(video_tasks + image_tasks), return_exceptions=True)
     for res in results:
         if isinstance(res, Exception):
             print(f"Error: {res}")
         else:
             print(res)
+
 
 if __name__ == "__main__":
     asyncio.run(test_cameras())
