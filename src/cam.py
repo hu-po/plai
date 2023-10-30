@@ -8,7 +8,7 @@ REMOTE_USERNAME = "oop"
 REMOTE_IP = "192.168.1.44"
 
 VIDEO_DURATION = 3
-VIDEO_FPS = 10
+VIDEO_FPS = 30
 
 @dataclass
 class Camera:
@@ -19,7 +19,7 @@ class Camera:
     desc: str
 
 CAMERAS = [
-    Camera(device="/dev/video0", name="stereo", width=960, height=1080, desc="stereo camera on the face facing forward"),
+    Camera(device="/dev/video0", name="stereo", width=1280, height=480, desc="stereo camera on the face facing forward"),
     Camera(device="/dev/video2", name="mono", width=640, height=480, desc="monocular camera on the chest facing forward"),
 ]
 
@@ -53,12 +53,12 @@ async def record_video(
     output_path = os.path.join(ROBOT_DATA_DIR, output_filename)
     cmd = [
         "ffmpeg", "-y",
-        "-t", str(duration),
-        "-r", str(fps),
         "-f", "v4l2",
+        "-r", str(fps),
+        "-t", str(duration),
         "-video_size", f"{camera.width}x{camera.height}",
-        "-c:v", "h264",
         "-i", camera.device,
+        "-c:v", "h264",
         output_path
     ]
     process = await asyncio.create_subprocess_exec(
