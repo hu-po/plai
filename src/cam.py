@@ -7,7 +7,9 @@ ROBOT_DATA_DIR = "/home/pi/dev/data/"
 REMOTE_DATA_DIR = "/home/oop/dev/data/"
 REMOTE_USERNAME = "oop"
 REMOTE_IP = "192.168.1.44"
+
 VIDEO_DURATION = 3
+VIDEO_FPS = 10
 
 @dataclass
 class Camera:
@@ -43,7 +45,8 @@ async def send_file(
 
 async def record_video(
     camera: Camera,
-    duration: int = VIDEO_DURATION
+    duration: int = VIDEO_DURATION,
+    fps: int = VIDEO_FPS,
 ) -> str:
     msg: str = ""
     output_filename = f"{camera.name}.mp4"
@@ -52,11 +55,12 @@ async def record_video(
         FFmpeg()
         .option("y")
         .option("t", str(duration))
-        .input(
-            camera.device, format="v4l2",
-            framerate=camera.fps, video_size=f"{camera.width}x{camera.height}"
-        )
-        .output(output_path, vcodec="h264")
+        .option("r", str(fps))
+        .option("f", "v4l2")
+        .option("video_size", f"{camera.width}x{camera.height}")
+        .option("c:v", "h264")
+        .input(camera.device)
+        .output(output_path)
     )
     stdout, stderr = await ffmpeg.execute()
     msg += f"Recorded {output_filename} of duration {duration} seconds\n"
