@@ -63,16 +63,22 @@ async def record_video(
         .output(output_path)
     )
     stdout, stderr = await ffmpeg.execute()
-    msg += f"Recorded {output_filename} of duration {duration} seconds\n"
     if stderr:
-        msg += f"ERROR when recording {stderr.decode()}"
+        msg += f"FFmpeg Error: {stderr.decode()}\n"
+    msg += f"Recorded {output_filename} of duration {duration} seconds\n"
+    if ffmpeg.returncode != 0:
         return msg
     msg += await send_file(output_filename)
     return msg
 
 async def test_cameras():
     tasks = [record_video(camera) for camera in CAMERAS]
-    await asyncio.gather(*tasks)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for res in results:
+        if isinstance(res, Exception):
+            print(f"Error: {res}")
+        else:
+            print(res)
 
 if __name__ == "__main__":
     asyncio.run(test_cameras())
